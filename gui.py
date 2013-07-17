@@ -1,0 +1,171 @@
+#!/usr/bin/python2.7
+#-*- coding: utf-8 -*-
+#lemon operating language bootstrap gui toolkit
+
+
+from __future__ import print_function
+
+
+try:
+	import pygame
+except:
+	shit("i need pygame. please install pygame. sudo apt-get install pygame / yum install pygame ....")
+
+
+contact = """
+
+irc: sirdancealo* @ freenode
+https://github.com/koo5/lemon-operating-language
+"""
+
+
+def shit(gone_wrong):
+	print(gone_wrong)
+	print("\nfor support:",contact)
+
+
+
+config = dict()
+try:
+	config = __import__("config").__dict__
+except:
+	pass
+
+
+
+def init_gui():
+	global font
+	global font_width
+	global screen
+	global screen_h
+
+	pygame.init()
+	pygame.display.set_caption("lemon")#window title
+	#sdl, which pygame is based on, has its own keyboard delay and repeat rate
+	pygame.key.set_repeat(config.get("delay") or 300,config.get("rate") or 30)
+	#this creates a window, so sorry for the size hardcoding for now
+	screen = pygame.display.set_mode((640,480))
+
+
+	#the final version is planned to use comic sans ✈
+	font = pygame.font.SysFont('monospace', 16)
+	font_width = font.render(" ",False,(0,0,0)).get_rect().width
+
+	screen_h = screen.get_height() / font.get_height()
+
+	
+
+
+clickables = [] #(rect, handler)
+screen_y = 0 #scroll in lines
+
+
+def topixels(x,y):
+	return x * font_width, (y-screen_y) * font.get_height()
+
+
+
+
+
+
+
+class gui_text():
+	def __init__(self, text):
+		self.text = text
+		self.color = pygame.Color("green")
+	def len(self):
+		return len(self.text)
+	def draw(self, x,y):
+		screen.blit(font.render(self.text, True, self.color),(x,y))
+class gui_newline():
+	pass
+class gui_focus():
+	def __init__(self,text):
+		self.color = (255,255,255)
+		self.text = "↳"+text+"↲"
+class gui_button():
+	def draw(self, x,y):
+		pygame.gfxdraw.rectangle(screen, self.rect(x,y). pygame.Color("red"))
+		gui_text.draw(self,x,y)
+		
+	def rect(self, x,y):
+		return pygame.Rect(x,y,x+w(),y+h())
+
+	def clickable(self, x,y):
+		return (self.rect(), self.handler)
+	
+	def __init__(self, text, handler):
+		self.handler = handler
+		self.text = text
+
+#class gui_textbox():
+
+
+
+
+
+
+
+
+def render(stuff):
+	global clickables
+	clickables = []
+	x=0
+	y=0
+
+	for item in stuff:
+		if y >= screen_y and y < screen_h:
+			item.draw(topixels(x,y))
+			if item.clickable:
+				clickables.append(item.clickable(x,y))
+		x = x + item.len()
+	
+		if isinstance(item, gui_newline):
+			x=0
+			y=y+1
+
+def click(x,y):
+	for item in clickables:
+		if item.collidepoint(x,y):
+			item[1]()
+
+
+def draw():
+	screen.fill((0,0,0))
+
+	class handler():
+		def click():
+			print("yea")
+	h = handler()
+
+	render( [gui_text("bananas on fire"), gui_newline(),
+		gui_button("click me if you can", h),
+		gui_newline()] )	
+
+	pygame.display.update()
+
+def process_event(e):
+	if e.type == pygame.MOUSEBUTTONDOWN:
+		click(e.x,e.y)
+
+def loop():
+	process_event(pygame.event.wait())
+	draw()
+
+def main():
+	while 1:
+		try:
+			loop()
+		except KeyboardInterrupt() as e:
+			pygame.display.iconify()
+			raise e
+		except Exception() as e:
+			pass
+
+def test_gui():
+	init_gui()
+	main()
+
+if __name__ == "__main__":
+	test_gui()
+
