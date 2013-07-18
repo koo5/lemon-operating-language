@@ -64,6 +64,8 @@ screen_y = 0 #scroll in lines
 def topixels(x,y):
 	return x * font_width, (y-screen_y) * font.get_height()
 
+def isvisible(x,y):
+	return y >= screen_y and y < screen_h
 
 
 
@@ -80,7 +82,8 @@ class gui_text(object):
 		screen.blit(font.render(self.text, True, self.color),(x,y))
 class gui_newline():
 	def draw(self, (x,y)):
-		pass
+		return (0,y+1)
+		
 class gui_focus(gui_text):
 	def __init__(self,text):
 		self.color = (255,255,255)
@@ -102,6 +105,11 @@ class gui_button(gui_text):
 		self.handler = handler
 
 #class gui_textbox():
+
+class child():
+	def __init__(self, name):
+		self.name = name
+		
 
 done = False
 
