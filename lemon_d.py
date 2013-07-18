@@ -13,15 +13,21 @@ class slot():
 		self.multi = multi
 
 
-block:
-	"""abstract presentation()
+class block(object):
+	pass
 
-
-text_presented_block_type(block):
+class text_block_def(block):
 	"""
 	name
-	presentations[]
+	texts[]
 	"""
+	def render(self):
+		r = [gui.textbox(self.name), gui.text(":"), gui.newline()]
+		for n, text in enumerate(texts):
+			r = r + [gui.text("presentation "+n+":"), gui.newline()]
+			for i in text:
+				if i.class == gui.text:
+					r.append(gui.textbox(i.text))
 
 
 

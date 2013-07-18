@@ -49,7 +49,7 @@ def init_gui():
 
 
 	#the final version is planned to use comic sans ✈
-	font = pygame.font.SysFont('monospace', 16)
+	font = pygame.font.SysFont('monospace', 17)
 	font_width = font.render(" ",False,(0,0,0)).get_rect().width
 
 	screen_h = screen.get_height() / font.get_height()
@@ -88,12 +88,13 @@ class gui_focus(gui_text):
 class gui_button(gui_text):
 	def draw(self, (x,y)):
 		pygame.gfxdraw.rectangle(screen, self.rect(x,y), pygame.Color("red"))
+		print (self.rect(x,y))
 		gui_text.draw(self,(x,y))
 		
 	def rect(self, x,y):
-		return pygame.Rect(x,y,x+font_width*self.len(),y+font.get_height())
+		return pygame.Rect(x,y,font_width*self.len(),font.get_height())
 
-	def clickable(self, x,y):
+	def clickable(self, (x,y)):
 		return (self.rect(x,y), self.handler)
 	
 	def __init__(self, text, handler):
@@ -129,23 +130,24 @@ def render(stuff):
 			if y >= screen_y and y < screen_h:
 				item.draw(topixels(x,y))
 				if hasattr(item,'clickable'):
-					print(item.clickable(x,y))
-					clickables.append(item.clickable(x,y))
+					print(item.clickable(topixels(x,y)))
+					clickables.append(item.clickable(topixels(x,y)))
 			x = x + item.len()
 	
 def click(pos):
 	x,y=pos
 	print (x,y,clickables)
 	for item in clickables:
-		if item.collidepoint(x,y):
-			item[1]()
+		if item[0].collidepoint(x,y):
+			print(item[1])
+			item[1].click()
 
 
 def draw():
 	screen.fill((0,0,0))
 
-	class handler():
-		def click():
+	class handler(object):
+		def click(self):
 			print("yea")
 	h = handler()
 
@@ -168,7 +170,7 @@ def loop():
 	draw()
 
 def main():
-	pygame.time.set_timer(pygame.USEREVENT, 40)#SIGINT timer
+	pygame.time.set_timer(pygame.USEREVENT, 1000)#40)#SIGINT timer
 	while not done:
 		try:
 			loop()
