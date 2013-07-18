@@ -8,6 +8,7 @@ from __future__ import print_function
 
 try:
 	import pygame
+	import pygame.gfxdraw
 except:
 	shit("i need pygame. please install pygame. sudo apt-get install pygame / yum install pygame ....")
 
@@ -69,39 +70,46 @@ def topixels(x,y):
 
 
 
-class gui_text():
+class gui_text(object):
 	def __init__(self, text):
 		self.text = text
 		self.color = pygame.Color("green")
 	def len(self):
 		return len(self.text)
-	def draw(self, x,y):
+	def draw(self, (x,y)):
 		screen.blit(font.render(self.text, True, self.color),(x,y))
 class gui_newline():
-	pass
-class gui_focus():
+	def draw(self, (x,y)):
+		pass
+class gui_focus(gui_text):
 	def __init__(self,text):
 		self.color = (255,255,255)
 		self.text = "↳"+text+"↲"
-class gui_button():
-	def draw(self, x,y):
-		pygame.gfxdraw.rectangle(screen, self.rect(x,y). pygame.Color("red"))
-		gui_text.draw(self,x,y)
+class gui_button(gui_text):
+	def draw(self, (x,y)):
+		pygame.gfxdraw.rectangle(screen, self.rect(x,y), pygame.Color("red"))
+		gui_text.draw(self,(x,y))
 		
 	def rect(self, x,y):
-		return pygame.Rect(x,y,x+w(),y+h())
+		return pygame.Rect(x,y,x+font_width*self.len(),y+font.get_height())
 
 	def clickable(self, x,y):
-		return (self.rect(), self.handler)
+		return (self.rect(x,y), self.handler)
 	
 	def __init__(self, text, handler):
+		gui_text.__init__(self, text)
 		self.handler = handler
-		self.text = text
 
 #class gui_textbox():
 
+done = False
 
-
+def bye():
+	global done
+	if __name__ == "__main__":
+		exit()
+	else:
+		done = True
 
 
 
@@ -114,17 +122,20 @@ def render(stuff):
 	y=0
 
 	for item in stuff:
-		if y >= screen_y and y < screen_h:
-			item.draw(topixels(x,y))
-			if item.clickable:
-				clickables.append(item.clickable(x,y))
-		x = x + item.len()
-	
 		if isinstance(item, gui_newline):
 			x=0
 			y=y+1
-
-def click(x,y):
+		else:
+			if y >= screen_y and y < screen_h:
+				item.draw(topixels(x,y))
+				if hasattr(item,'clickable'):
+					print(item.clickable(x,y))
+					clickables.append(item.clickable(x,y))
+			x = x + item.len()
+	
+def click(pos):
+	x,y=pos
+	print (x,y,clickables)
 	for item in clickables:
 		if item.collidepoint(x,y):
 			item[1]()
@@ -146,14 +157,19 @@ def draw():
 
 def process_event(e):
 	if e.type == pygame.MOUSEBUTTONDOWN:
-		click(e.x,e.y)
+		click(e.pos)
+	elif e.type == pygame.QUIT:
+		exit()
+#	elif e.type == pygame.VIDEOEXPOSE:
+#		draw()
 
 def loop():
 	process_event(pygame.event.wait())
 	draw()
 
 def main():
-	while 1:
+	pygame.time.set_timer(pygame.USEREVENT, 40)#SIGINT timer
+	while not done:
 		try:
 			loop()
 		except KeyboardInterrupt() as e:

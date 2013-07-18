@@ -1,3 +1,6 @@
+#lemon operating language
+
+
 #settings blocks
 
 language:
@@ -63,36 +66,78 @@ items:
 #serialization sucks
 """
 
-#clickables = array of (x,y,x,y) tuples
+
 
 
 class gui_text():
-	def sim(x,y):
-		x=x+len(self.text)
-		y=y+self.text.count("\n")
-		return x,y
+	def __init__(self):
+		self.text = "BANANA"
+		self.color = pygame.Color("green")
+	def len():
+		return len(self.text)
+	def draw(x,y):
+		screen.surface.blit(font.render(self.text, antialias=True, self.color),(x,y))
 class gui_focus():
-	color = (255,255,255)
+	def __init__(self,text):
+		self.color = (255,255,255)
+		self.text = "↳"+text+"↲"
 class gui_button
-	def clickable():
-		return (pygame.Rect(
+	def draw(x,y):
+		pygame.gfxdraw.rectangle(screen, self.rect(x,y). pygame.Color("red"))
+		gui_text.draw(self,x,y)
+		
+	def rect(x,y):
+		return pygame.Rect(x,y,x+w(),y+h())
+
+	def clickable(x,y):
+		return (self.rect(), self.handler)
+	
+	def __init__(self, text, handler):
+		self.handler = handler
+		self.text = text
+
 class gui_textbox
 
 
 
+clickables = [] #(rect, handler)
+
+
+
+def test_gui():
+	class handler():
+		click():
+			print("yea")
+	h = handler()
+	render( [gui_text("bananas on fire"), gui_newline(),
+		gui_button("click me if you can", h),
+		gui_newline()] )
+		
+
+
 
 render(stuff):
+	global clickables
+	clickables = []
 	x=0
 	y=0
-	clickables = []
+
 	for item in stuff:
 		if y >= screen_y and y < screen_h:
-			x,y=item.draw(x,y)
-		else:
-			x,y=item.sim(x,y)
+			item.draw(topixels(x,y))
+			if item.clickable:
+				clickables[] = item.clickable(x,y)
+		x = x + item.len()
 	
-		if isinstance(item, text):
-			out += item
-		elif isinstance(item, ):
-			out += item
-		
+		if isinstance(item, gui_newline):
+			x=0
+			y=y+1
+
+click(x,y):
+	for item in clickables:
+		if item.collidepoint(x,y):
+			item[1]()
+
+
+def draw():
+	screen_surface.fill((0,0,0))
