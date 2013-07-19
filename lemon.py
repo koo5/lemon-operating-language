@@ -66,7 +66,7 @@ clickables = [] #(handler, rect)
 screen_y = 0 #amount of lines scrolled
 
 
-#mostly everything is in chars, until the draw() functions
+#mostly everything is in chars, until inside the draw() functions
 def topixels(x,y):
 	return x * font_w, (y-screen_y) * font_h
 
@@ -199,7 +199,14 @@ root.items.append(block_dummy())
 focused = root.items[0]
 
 
-
+"""
+dummy is focused
+key is pressed
+menu is displayed
+item is selected
+dummy is replaced
+...
+"""
 
 
 
@@ -242,6 +249,7 @@ def process_event(e):
 		click(e.pos)
 	elif e.type == pygame.QUIT:
 		exit()
+#y u no work
 #	elif e.type == pygame.VIDEOEXPOSE:
 #		draw()
 
@@ -275,7 +283,7 @@ class language():
 	#sooomewhere over the rainbow
 
 
-
+#block view editor
 #class block_def(block):
 #	"""
 #	name
