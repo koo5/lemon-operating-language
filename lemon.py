@@ -68,7 +68,7 @@ screen_y = 0 #amount of lines scrolled
 
 #mostly everything is in chars, until the draw() functions
 def topixels(x,y):
-	return x * font_width, (y-screen_y) * font.get_height()
+	return x * font_w, (y-screen_y) * font_h
 
 #are we on screen?
 def isvisible(x,y):
@@ -88,7 +88,7 @@ class gui_text(object):
 	def draw(self, (c,r)):
 		if isvisible(c,r):
 			screen.blit(font.render(self.text, True, self.color),topixels(c,r))
-		return (c+len(self),r)
+		return (c+self.len(),r)
 class gui_newline():
 	def draw(self, (c,r)):
 		return (0,r+1)
@@ -166,10 +166,10 @@ class gui_child():
 
 class block(object):
 	#gui:
-	def draw(c,r):
+	def draw(self,cr):
 		for item in self.gui:
-			x,y = item.draw(x,y)
-		return x,y
+			cr = item.draw(cr)
+		return cr
 
 	def copy_gui():
 		self.gui = self.type.views[self.viewid][:]
@@ -179,7 +179,7 @@ class block_list(block):
 		self.items = []
 	def draw(self,(c,r)):
 		for item in self.items:
-			c,r = item.draw(c,r)
+			c,r = item.draw((c,r))
 			r = r + 1
 		return c,r
 
@@ -187,13 +187,16 @@ class block_type(block):
 	def __init__(self, name):
 		self.name = name
 		self.views = [[]]
-		
+
+class block_dummy(block):
+	def __init__(self):
+		self.gui = [gui_text("dummy")]
 	
 
 root = block_list()
+root.items.append(block_dummy())
 
-
-
+focused = root.items[0]
 
 
 
