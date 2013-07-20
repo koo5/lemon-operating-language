@@ -165,7 +165,20 @@ class gui_child():
 
 
 class block(object):
-	#gui:
+	def fixorphans(self):
+		for item in self.children:
+			item.parent = self
+			item.fixorphans()
+		for item in self.gui:
+			item.parent = self
+
+
+	def __init__(self,type):
+		self.type = type
+		self.children = {}
+		for item in type.children:
+			self.children[item] = block_dummy()
+	
 	def draw(self,cr):
 		for item in self.gui:
 			cr = item.draw(cr)
@@ -173,6 +186,9 @@ class block(object):
 
 	def copy_gui():
 		self.gui = self.type.views[self.viewid][:]
+	
+	def keydown(e):
+		
 	
 class block_list(block):
 	def __init__(self):
@@ -184,20 +200,32 @@ class block_list(block):
 		return c,r
 
 class block_type(block):
-	def __init__(self, name):
-		self.name = name
-		self.views = [[]]
+	def __init__(self, name, views):
+		self.name = name1
+		self.views = views
+		self.children = []
+		#supposing all views show the same children
+		for item in views[0]:
+			if isinstance(item, gui_child):
+				self.children.append(item.name)
 
 class block_dummy(block):
 	def __init__(self):
 		self.gui = [gui_text("dummy")]
-	
+
+
+		
+
 
 root = block_list()
+root.items.append(block_type("if", [[gui_text("if "), gui_child("condition"), gui_newline(), gui_child("then")]]))
+root.items.append(block(root.items[0]))
+
 root.items.append(block_dummy())
 
 focused = root.items[0]
 
+root.fixorphans()
 
 """
 dummy is focused
@@ -231,6 +259,8 @@ def bye():
 	done = True
 
 
+def keydown(event):
+	focused.keydown()
 
 
 	
@@ -252,6 +282,8 @@ def process_event(e):
 #y u no work
 #	elif e.type == pygame.VIDEOEXPOSE:
 #		draw()
+	elif e.type == pygame.KEYDOWN:
+		keydown(event)
 
 
 def loop():
