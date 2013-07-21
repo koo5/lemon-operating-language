@@ -80,9 +80,10 @@ def isvisible(x,y):
 
 
 class gui_text(object):
-	def __init__(self, text):
+	def __init__(self, parent, text, color=pygame.Color("green")):
+		self.parent = parent
 		self.text = text
-		self.color = pygame.Color("green")
+		self.color = color
 	def len(self):
 		return len(self.text)
 	def draw(self, (c,r)):
@@ -93,9 +94,10 @@ class gui_newline():
 	def draw(self, (c,r)):
 		return (0,r+1)
 class gui_focus(gui_text):
-	def __init__(self,text):
+	def __init__(self,parent,text):
 		self.color = (255,255,255)
 		self.text = "↳"+text+"↲"
+		self.parent = parent
 class gui_button(gui_text):
 	def draw(self, (c,r)):
 		global clickables
@@ -108,14 +110,17 @@ class gui_button(gui_text):
 	def rect(self, (c,r)):
 		return pygame.Rect(c,r,font_width*self.len(),font_h)
 
-	def __init__(self, text, handler):
+	def __init__(self, parent, text, handler):
 		gui_text.__init__(self, text)
 		self.handler = handler
+		self.parent = parent
+
 
 class gui_textbox(gui_text):
 
-	def __init__(self):
-		self.cursorx = 0		
+	def __init__(self, parent):
+		self.cursorx = 0
+		self.parent = parent
 		
 	def moveright(self):
 		self.cursorx += 1
@@ -123,7 +128,7 @@ class gui_textbox(gui_text):
 	def moveleft(self):
 		if self.cursorx > 0: self.cursorx -= 1
 
-	def key(self,k):
+	def keydown(self,k):
 		if event.key==pygame.K_BACKSPACE:
 			if cursorx > 0:
 				self.text = self.text[0:cursorx-1]+self.text[cursorx:]
@@ -210,10 +215,50 @@ class block_type(block):
 				self.children.append(item.name)
 
 class block_dummy(block):
-	def __init__(self):
-		self.gui = [gui_text("dummy")]
+	def __init__(self, parent):
+		self.gui = [gui_text(self, "dummy")]
+		self.parent = parent
+	
+	def keydown(e):
+		if e.unicode:
+			self.parent.replace(self, gui_inputty(self.parent))
+
+class gui_menu():
+	__init__():
+		
+	
+	setitems(items):
+		self.items = items
+	
+	def keydown(e):
+		if e.key == pygame.K_DOWN:
+			self.sel = self.sel +1
+		if e.key == pygame.K_UP:
+			self.sel = self.sel -1
+	
+	draw(cr):
+		for text,val in self.items:
+			if 
+			gui_text(self, text, c).draw(cr)
+			cr = (c,r+1)
+			
 
 
+class block_inputty(block):
+	__init__:
+		self.gui = [gui_textbox(), gui_newline(), gui_menu()]
+
+
+	def keydown(e):
+		if isinstance(self.gui[0], gui_text):
+			if e.unicode:
+				self.gui[0] = gui_textbox(self)
+		if isinstance(self.gui[0], gui_textbox):
+			self.gui[0].keydown(e)
+			self.gui = self.gui[1:]
+			self.gui.append(gui_newline(self))
+			for item in lang.menu(self.gui[0].text):
+				self.gui.append(
 		
 
 
