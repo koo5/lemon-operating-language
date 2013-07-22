@@ -173,19 +173,17 @@ class gui_child():
 
 
 class block(object):
+	def ancestor(self):
+		return super(type(self),self)
+
 	def fixorphans(self):
-		print ("fixing orphans (",self.children,") of ",self,"::")
-		for item in self.children:
-			print ("item ",item)
-			item.parent = self
-			item.fixorphans()
-		print ("fixing orphans (",self.gui,") of ",self,"::")
+		print ("fixing gui orphans (",self.gui,") of ",self,"::")
 		for item in self.gui:
 			print ("item ",item)
 			item.parent = self
 
 	def __init__(self):
-		self.children = {}
+		self.gui = [gui_text(self,"im a block")]
 	
 	def draw(self,cr):
 		for item in self.gui:
@@ -200,10 +198,21 @@ class block(object):
 		
 		
 class templated_block(block):
-	def __init__(self):
+	def __init__(self,template):
+		self.ancestor().__init__()
+		self.template = template
 		self.children = {}
-		for item in type.children:
+		for item in template.kids:
 			self.children[item] = block_dummy(self)
+
+	def fixorphans(self):
+		print ("fixing orphans (",self.children,") of ",self,"::")
+		for name, item in self.children.iteritems():
+			print ("item ",item)
+			item.parent = self
+			item.fixorphans()
+		block.fixorphans(self)
+
 
 
 class block_list(block):
@@ -236,6 +245,7 @@ class template_editor(block):
 	def __init__(self, parent, template):
 		self.parent = parent
 		self.template = template
+		self.gui = [gui_text(0,"im a template editor!")]
 
 
 class block_dummy(block):
@@ -285,6 +295,7 @@ class block_inputty(block):
 
 
 root = block_list()
+
 root.items.append(
 	template_editor(0,template("if", 
 			[[
@@ -293,7 +304,8 @@ root.items.append(
 			gui_newline(0), 
 			gui_child(0,"then")
 			]])))
-root.items.append(block(root.items[0]))
+
+root.items.append(templated_block(root.items[0].template))
 
 root.items.append(block_dummy(0))
 
@@ -357,7 +369,7 @@ def process_event(e):
 #	elif e.type == pygame.VIDEOEXPOSE:
 #		draw()
 	elif e.type == pygame.KEYDOWN:
-		keydown(event)
+		keydown(e)
 
 
 def loop():
