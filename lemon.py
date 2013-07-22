@@ -91,6 +91,8 @@ class gui_text(object):
 			screen.blit(font.render(self.text, True, self.color),topixels(c,r))
 		return (c+self.len(),r)
 class gui_newline():
+	def __init__(self,parent):
+		self.parent = parent
 	def draw(self, (c,r)):
 		return (0,r+1)
 class gui_focus(gui_text):
@@ -160,7 +162,8 @@ class gui_textbox(gui_text):
 
 
 class gui_child():
-	def __init__(self, name):
+	def __init__(self, parent, name):
+		self.parent = parent
 		self.name = name
 	
 	def draw(c,r):
@@ -171,18 +174,18 @@ class gui_child():
 
 class block(object):
 	def fixorphans(self):
+		print ("fixing orphans (",self.children,") of ",self,"::")
 		for item in self.children:
+			print ("item ",item)
 			item.parent = self
 			item.fixorphans()
+		print ("fixing orphans (",self.gui,") of ",self,"::")
 		for item in self.gui:
+			print ("item ",item)
 			item.parent = self
 
-
-	def __init__(self,type):
-		self.type = type
+	def __init__(self):
 		self.children = {}
-		for item in type.children:
-			self.children[item] = block_dummy()
 	
 	def draw(self,cr):
 		for item in self.gui:
@@ -193,8 +196,16 @@ class block(object):
 		self.gui = self.type.views[self.viewid][:]
 	
 	def keydown(e):
+		print( "banana")
 		
-	
+		
+class templated_block(block):
+	def __init__(self):
+		self.children = {}
+		for item in type.children:
+			self.children[item] = block_dummy(self)
+
+
 class block_list(block):
 	def __init__(self):
 		self.items = []
@@ -203,16 +214,29 @@ class block_list(block):
 			c,r = item.draw((c,r))
 			r = r + 1
 		return c,r
+	def fixorphans(self):
+		print ("fixing orphans (",self.items,") of ",self,"::")
+		for item in self.items:
+			print ("item ",item)
+			item.parent = self
+			item.fixorphans()
 
-class block_type(block):
+
+class template():
 	def __init__(self, name, views):
-		self.name = name1
+		self.name = name
 		self.views = views
-		self.children = []
+		self.kids = [] #template kids are not to be confused with block children
 		#supposing all views show the same children
 		for item in views[0]:
 			if isinstance(item, gui_child):
-				self.children.append(item.name)
+				self.kids.append(item.name)
+
+class template_editor(block):
+	def __init__(self, parent, template):
+		self.parent = parent
+		self.template = template
+
 
 class block_dummy(block):
 	def __init__(self, parent):
@@ -224,49 +248,54 @@ class block_dummy(block):
 			self.parent.replace(self, gui_inputty(self.parent))
 
 class gui_menu():
-	__init__():
+	def __init__(self, parent):
+		self.parent = parent
 		
 	
-	setitems(items):
+	def setitems(self, items):
 		self.items = items
 	
-	def keydown(e):
+	def keydown(self, e):
 		if e.key == pygame.K_DOWN:
 			self.sel = self.sel +1
 		if e.key == pygame.K_UP:
 			self.sel = self.sel -1
 	
-	draw(cr):
-		for text,val in self.items:
-			if 
+	def draw(self, cr):
+		n=0
+		for text, val in self.items:
+			if n == self.sel:
+				c = pygame.Color("white")
+			else:
+				c = pygame.Color("yellow")
 			gui_text(self, text, c).draw(cr)
 			cr = (c,r+1)
+			n=n+1
 			
 
 
 class block_inputty(block):
-	__init__:
-		self.gui = [gui_textbox(), gui_newline(), gui_menu()]
+	def __init__(self):
+		self.gui = [gui_textbox(self,"inputty"), gui_newline(self), gui_menu(self)]
 
 
-	def keydown(e):
-		if isinstance(self.gui[0], gui_text):
-			if e.unicode:
-				self.gui[0] = gui_textbox(self)
-		if isinstance(self.gui[0], gui_textbox):
-			self.gui[0].keydown(e)
-			self.gui = self.gui[1:]
-			self.gui.append(gui_newline(self))
-			for item in lang.menu(self.gui[0].text):
-				self.gui.append(
+	def keydown(self,e):
+		self.gui[0].keydown(e) | self.gui[1].keydown(e)
 		
 
 
 root = block_list()
-root.items.append(block_type("if", [[gui_text("if "), gui_child("condition"), gui_newline(), gui_child("then")]]))
+root.items.append(
+	template_editor(0,template("if", 
+			[[
+			gui_text(0,"if "), 
+			gui_child(0,"condition"), 
+			gui_newline(0), 
+			gui_child(0,"then")
+			]])))
 root.items.append(block(root.items[0]))
 
-root.items.append(block_dummy())
+root.items.append(block_dummy(0))
 
 focused = root.items[0]
 
