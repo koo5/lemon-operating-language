@@ -338,9 +338,9 @@ root.items.append(
 	template_editor(0,template("if", 
 			[[
 			gui_text(0,"if "), 
-			gui_child(0,"condition"), 
+			gui_dummy(0,"condition"),
 			gui_newline(0), 
-			gui_child(0,"then")
+			gui_dummy(0,"then")
 			]])))
 
 root.items.append(templated_block(root.items[0].template))
