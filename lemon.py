@@ -4,13 +4,29 @@
 
 
 from __future__ import print_function
-
+from copy import deepcopy
 
 
 contact = """
 irc: sirdancealot @ freenode
 https://github.com/koo5/lemon-operating-language
 """
+
+
+
+def out(**args):
+	print (["  "*indentation], args)
+
+def ind(**args):
+	global indentation
+	out(args)
+	indentation = indentation + 1
+
+def ded(**args):
+	global indentation
+	out(args)
+	indentation = indentation - 1
+
 
 
 
@@ -174,10 +190,12 @@ class gui_child():
 
 class block(object):
 	def ancestor(self):
+	#wont this always work with block?
+		print ("my ancestor is ",super(type(self),self))
 		return super(type(self),self)
 
 	def fixorphans(self):
-		print ("fixing gui orphans (",self.gui,") of ",self,"::")
+		print ("fixing gui orphans of ",self," (",self.gui,"):")
 		for item in self.gui:
 			print ("item ",item)
 			item.parent = self
@@ -194,33 +212,21 @@ class block(object):
 		self.gui = self.type.views[self.viewid][:]
 	
 	def keydown(e):
-		print( "banana")
+		pass
+		#print( "banana")
+#		if e.key == pygame.K_UP:
+#			self.parent.up()
+#		if e.key == pygame.K_DOWN:
+#			self.parent.down()
 		
-		
-class templated_block(block):
-	def __init__(self,template):
-		self.ancestor().__init__()
-		self.template = template
-		self.children = {}
-		for item in template.kids:
-			self.children[item] = block_dummy(self)
 
-	def fixorphans(self):
-		print ("fixing orphans (",self.children,") of ",self,"::")
-		for name, item in self.children.iteritems():
-			print ("item ",item)
-			item.parent = self
-			item.fixorphans()
-		block.fixorphans(self)
-
-
-
+	
 class block_list(block):
 	def __init__(self):
 		self.items = []
 	def draw(self,(c,r)):
 		for item in self.items:
-			c,r = item.draw((c,r))
+			x,r = item.draw((c,r))
 			r = r + 1
 		return c,r
 	def fixorphans(self):
@@ -241,6 +247,34 @@ class template():
 			if isinstance(item, gui_child):
 				self.kids.append(item.name)
 
+		
+class templated_block(block):
+	def __init__(self,template):
+		self.ancestor().__init__()
+		self.template = template
+		self.children = {}
+		self.view = template.views[0]
+		for item self.view:
+			j = deepcopy(item)
+			j.parent = self
+			self.gui.append(j)
+			if isinstance(item, gui_child):
+			
+			
+		for item in template.kids:
+			self.children[item] = block_dummy(self)
+		for i in template.views[0]:
+
+	def fixorphans(self):
+		print ("fixing orphans (",self.children,") of ",self,"::")
+		for name, item in self.children.iteritems():
+			print ("item ",item)
+			item.parent = self
+			item.fixorphans()
+		block.fixorphans(self)
+
+
+
 class template_editor(block):
 	def __init__(self, parent, template):
 		self.parent = parent
@@ -255,7 +289,11 @@ class block_dummy(block):
 	
 	def keydown(e):
 		if e.unicode:
-			self.parent.replace(self, gui_inputty(self.parent))
+			a = gui_inputty(self.parent)
+			self.parent.replace(self,a)
+			a.keydown(e)
+		else:
+			parent.keydown(e)
 
 class gui_menu():
 	def __init__(self, parent):
