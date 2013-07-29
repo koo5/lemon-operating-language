@@ -1,10 +1,15 @@
-#!/usr/bin/python2.7
+#!/usr/bin/python3
 #-*- coding: utf-8 -*-
 #lemon operating language bootstrap
 
 
-from __future__ import print_function
-from copy import deepcopy
+
+
+
+import copy
+
+
+
 
 
 contact = """
@@ -13,6 +18,18 @@ https://github.com/koo5/lemon-operating-language
 """
 
 
+
+
+
+def shit(gone_wrong):
+	print(gone_wrong)
+	print("\nfor support:",contact)
+
+
+
+
+
+#indented (debug) output
 
 def out(**args):
 	print (["  "*indentation], args)
@@ -30,9 +47,7 @@ def ded(**args):
 
 
 
-def shit(gone_wrong):
-	print(gone_wrong)
-	print("\nfor support:",contact)
+
 
 
 
@@ -45,11 +60,8 @@ except:
 
 
 
-config = dict()
-try:
-	config = __import__("config").__dict__
-except:
-	pass
+
+
 
 
 
@@ -58,29 +70,39 @@ def init_gui():
 	global font_w
 	global font_h
 	global screen
-	global screen_h
+	global screen_rows
 
 	pygame.init()
 	pygame.display.set_caption("lemon")#window title
 	#sdl, which pygame is based on, has its own keyboard delay and repeat rate
-	pygame.key.set_repeat(config.get("delay") or 300,config.get("rate") or 30)
-	#this creates a window, so sorry for the size hardcoding for now
+	pygame.key.set_repeat(300,30)
 	screen = pygame.display.set_mode((640,480))
 
-
-	#the final version is planned to use comic sans ✈
 	font = pygame.font.SysFont('monospace', 18)
 	font_w = font.render(" ",False,(0,0,0)).get_rect().width
 	font_h = font.get_height()
-
-	screen_h = screen.get_height() / font.get_height()
+	screen_rows = screen.get_height() / font_h
 
 	
 
-done = False
-clickables = [] #(handler, rect)
-screen_y = 0 #amount of lines scrolled
 
+
+
+
+
+
+lines = []
+vscroll = 0 #amount of lines scrolled
+done = False
+
+
+
+
+
+
+
+def clear_lines():
+	lines = [[] for i in range(0,screen_rows)]
 
 #mostly everything is in chars, until inside the draw() functions
 def topixels(x,y):
@@ -88,57 +110,70 @@ def topixels(x,y):
 
 #are we on screen?
 def isvisible(x,y):
-	return y >= screen_y and y < screen_h
+	return y >= vscroll and (y-vscroll) < screen_rows
 
 
 
-#gui controls
 
 
-class gui_text(object):
-	def __init__(self, parent, text, color=pygame.Color("green")):
+
+
+
+
+
+class control(object):
+	def __init__(self,parent):
 		self.parent = parent
+		self.controls = []
+	def setparent(self, parent):
+		self.parent = parent
+		for c in self.controls:
+			c.setparent(self)
+	def imhere(self):
+		lines[len(lines)-1].append(self)
+	def copy(self):
+		return copy.copy(self)
+
+
+class text(control):
+	def __init__(self, parent, text, color=pygame.Color("white")):
+		super().__init__()
 		self.text = text
+		if isinstance(color, text):
+			color = pygame.Color(color)
 		self.color = color
 	def len(self):
 		return len(self.text)
-	def draw(self, (c,r)):
+	def render(self, (c,r)):
 		if isvisible(c,r):
 			screen.blit(font.render(self.text, True, self.color),topixels(c,r))
 		return (c+self.len(),r)
-class gui_newline():
-	def __init__(self,parent):
-		self.parent = parent
-	def draw(self, (c,r)):
-		return (0,r+1)
-class gui_focus(gui_text):
-	def __init__(self,parent,text):
-		self.color = (255,255,255)
-		self.text = "↳"+text+"↲"
-		self.parent = parent
-class gui_button(gui_text):
-	def draw(self, (c,r)):
-		global clickables
-		if isvisible(c,r):
-			rect = self.rect(topixels(c,r))
-			clickables.append((self.handler, rect))
-			pygame.gfxdraw.rectangle(screen, rect, pygame.Color("red"))
-		return gui_text.draw(self,(c,r))
-		
 	def rect(self, (c,r)):
 		return pygame.Rect(c,r,font_width*self.len(),font_h)
-
+		
+class newline(control):
+	def __init__(self,parent):
+		super().__init__()
+	def render(self, (c,r)):
+		lines.append(list())
+		return (0,r+1)
+		
+class button(text):
+	def render(self, (c,r)):
+		if isvisible(c,r):
+			rect = self.rect(topixels(c,r))
+			pygame.gfxdraw.rectangle(screen, rect, pygame.Color("red"))
+			self.imhere()
+		return super().render(self,(c,r))
+		
 	def __init__(self, parent, text, handler):
-		gui_text.__init__(self, text)
+		super().__init__(parent, text)
 		self.handler = handler
-		self.parent = parent
 
-
-class gui_textbox(gui_text):
-
+class textbox(text):
 	def __init__(self, parent):
+		super().__init__(parent)
 		self.cursorx = 0
-		self.parent = parent
 		
 	def moveright(self):
 		self.cursorx += 1
@@ -158,62 +193,42 @@ class gui_textbox(gui_text):
 			self.text[0:self.cursorx]+event.unicode+self.text[cursorx:]
 			cursorx +=1
 
-	def draw(self,(c,r)):
+	def render(self,(c,r)):
 		if isvisible(c,r):
 			px,py = topixels(c,r)
 			#rectangle around
 			pygame.draw.rect(screen,
-				(0,200,0), (px,py,len(self.text)*font_w, font_h), 1)#thickenss
+				(0,255,0), (px,py,len(self.text)*font_w, font_h), 1)#thickenss
 
-			#text
-			screen.blit(font.render(self.text,True,self.color),(px, py))
-		
 			#cursor
 			startpos = (px+(self.cursorx*font_w), py)
 			endpos   = (startpos[0],startpos[1]+font_h)
-			pygame.draw.line(screen, (0, 255, 0), startpos, endpos, 3)#thickness
-		
-		return (c+self.len(), r)
+			pygame.draw.line(screen, (0, 155, 255), startpos, endpos, 3)#thickness
+			self.imhere()
+			
+		return super().render(c+self.len(), r)
 
 
-
-class gui_child():
-	def __init__(self, parent, name):
-		self.parent = parent
-		self.name = name
+class block(control):
+	def __init__(self, parent):
+		super().__init__(parent)		
+		self.gui = [gui_text(self,"im a block")]
 	
-	def draw(c,r):
-		return parent.__dict__()[self.name].draw(c,r)
-
-
-
-
-class block(object):
-	def ancestor(self):
-	#wont this always work with block?
-		print ("my ancestor is ",super(type(self),self))
-		return super(type(self),self)
-
-	def fixorphans(self):
+	def setparent(self):
+		super().setparent()
 		print ("fixing gui orphans of ",self," (",self.gui,"):")
 		for item in self.gui:
 			print ("item ",item)
-			item.parent = self
+			item.setparent(self)
 
-	def __init__(self):
-		self.gui = [gui_text(self,"im a block")]
-	
-	def draw(self,cr):
+	def render(self,cr):
+		cr = super().render()	
 		for item in self.gui:
-			cr = item.draw(cr)
+			cr = item.render(cr)
 		return cr
 
-	def copy_gui():
-		self.gui = self.type.views[self.viewid][:]
-	
 	def keydown(e):
-		pass
-		#print( "banana")
+		print(e)
 #		if e.key == pygame.K_UP:
 #			self.parent.up()
 #		if e.key == pygame.K_DOWN:
@@ -229,7 +244,8 @@ class block_list(block):
 			x,r = item.draw((c,r))
 			r = r + 1
 		return c,r
-	def fixorphans(self):
+	def setparent(self):
+		super().setparent()
 		print ("fixing orphans (",self.items,") of ",self,"::")
 		for item in self.items:
 			print ("item ",item)
@@ -237,65 +253,47 @@ class block_list(block):
 			item.fixorphans()
 
 
+
 class template():
 	def __init__(self, name, views):
 		self.name = name
 		self.views = views
-		self.kids = [] #template kids are not to be confused with block children
-		#supposing all views show the same children
-		for item in views[0]:
-			if isinstance(item, gui_child):
-				self.kids.append(item.name)
+
 
 		
-class templated_block(block):
+class templated(block):
 	def __init__(self,template):
 		self.ancestor().__init__()
 		self.template = template
-		self.children = {}
 		self.view = template.views[0]
-		for item self.view:
-			j = deepcopy(item)
-			j.parent = self
+		for item in self.view:
+			j = item.copy()
+			j.setparent(self)
 			self.gui.append(j)
-			if isinstance(item, gui_child):
-			
-			
-		for item in template.kids:
-			self.children[item] = block_dummy(self)
-		for i in template.views[0]:
-
-	def fixorphans(self):
-		print ("fixing orphans (",self.children,") of ",self,"::")
-		for name, item in self.children.iteritems():
-			print ("item ",item)
-			item.parent = self
-			item.fixorphans()
-		block.fixorphans(self)
 
 
 
 class template_editor(block):
 	def __init__(self, parent, template):
-		self.parent = parent
+		self.ancestor().__init__()
 		self.template = template
-		self.gui = [gui_text(0,"im a template editor!")]
+		self.gui = [text(0,"ill be a template editor..one day!")]
 
 
-class block_dummy(block):
-	def __init__(self, parent):
-		self.gui = [gui_text(self, "dummy")]
+class dummy(block):
+	def __init__(self, parent, text):
+		self.gui = [text(self, "<<"+text+">>",(250,250,200)]
 		self.parent = parent
 	
 	def keydown(e):
 		if e.unicode:
-			a = gui_inputty(self.parent)
+			a = inputty(self.parent)
 			self.parent.replace(self,a)
 			a.keydown(e)
 		else:
 			parent.keydown(e)
 
-class gui_menu():
+class menu():
 	def __init__(self, parent):
 		self.parent = parent
 		
@@ -312,19 +310,15 @@ class gui_menu():
 	def draw(self, cr):
 		n=0
 		for text, val in self.items:
-			if n == self.sel:
-				c = pygame.Color("white")
-			else:
-				c = pygame.Color("yellow")
-			gui_text(self, text, c).draw(cr)
+			text(self, text, "white" if n == self.sel else "yellow").draw(cr)
 			cr = (c,r+1)
 			n=n+1
-			
+
 
 
 class block_inputty(block):
 	def __init__(self):
-		self.gui = [gui_textbox(self,"inputty"), gui_newline(self), gui_menu(self)]
+		self.gui = [textbox(self,"inputty"), newline(self), menu(self)]
 
 
 	def keydown(self,e):
@@ -335,12 +329,12 @@ class block_inputty(block):
 root = block_list()
 
 root.items.append(
-	template_editor(0,template("if", 
+	template_editor(0,template("if",
 			[[
 			gui_text(0,"if "), 
-			gui_dummy(0,"condition"),
+			block_dummy(0,"condition"),
 			gui_newline(0), 
-			gui_dummy(0,"then")
+			block_dummy(0,"then")
 			]])))
 
 root.items.append(templated_block(root.items[0].template))
@@ -366,8 +360,7 @@ dummy is replaced
 
 
 def draw():
-	global clickables
-	clickables = []
+	clear_lines()
 	screen.fill((0,0,0))
 	root.draw((0,0))
 	pygame.display.update()
