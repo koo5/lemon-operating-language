@@ -151,12 +151,13 @@ class label(control):
 		return (c+self.len(),r)
 	def rect(self, c,r):
 		return pygame.Rect(c,r,font_width*self.len(),font_h)
-		
+
+
 class newline(control):
 	def __init__(self,parent):
 		super(self.__class__,self).__init__(parent)
-	def render(self, c,r):
-		return (0,r+1)
+#	def render(self, c,r):
+#		return (0,r+1)
 		
 class button(label):
 	def render(self, c,r):
@@ -212,7 +213,7 @@ class textbox(label):
 class block(control):
 	def __init__(self, parent):
 		super(block,self).__init__(parent)
-		self.gui = [label(self,"im a block")]
+		self.gui = [label(self, self.__repr__()),newline(self)]
 	
 	def setparent(self,parent):
 		super(block,self).setparent(parent)
@@ -222,8 +223,13 @@ class block(control):
 			item.setparent(self)
 
 	def render(self,c,r):
+		c0 = c
 		for item in self.gui:
-			c,r = item.render(c,r)
+			if isinstance(item,newline):
+				c = c0
+				r = r+1
+			else:
+				c,r = item.render(c,r)
 		return c,r
 
 	def keydown(e):
@@ -236,21 +242,35 @@ class block(control):
 
 	
 class block_list(block):
-	def __init__(self,parent):
-		super(block_list,self).__init__(parent)
-		self.items = []
-	def draw(self,c,r):
-		for item in self.items:
-			c,r = item.draw(c,r)
-			r = r + 1
-		return c,r
-	def setparent(self,parent):
-		super(block_list,self).setparent(parent)
-		print ("fixing orphans (",self.items,") of ",self,"::")
-		for item in self.items:
+	def __init__(i,parent,items=[],indent=0):
+		super(block_list,i).__init__(parent)
+		i.items = []
+	def setparent(i,parent):
+		super(block_list,i).setparent(parent)
+		print ("fixing orphans (",i.items,") of ",i,"::")
+		for item in i.items:
 			print ("item ",item)
-			item.setparent(self)
+			item.setparent(i)
 
+	def render(i,c,r):
+		c,r=super(block_list,i).render(c,r)
+		for item in i.items:
+			_,r = item.render(c+3, r)
+			r=r+1
+		return c,r
+
+
+class indent(block_list):
+	def __init__(self, parent, items):
+		super(self.__class__,self).__init__(parent)
+		self.items = items
+	def render(self, c,r):
+		for item in i.items:
+			_,r = item.render(c+3, r)
+			r=r+1
+		return c,r
+	
+	
 
 
 class template():
@@ -401,7 +421,10 @@ def process_event(e):
 #	elif e.type == pygame.VIDEOEXPOSE:
 #		draw()
 	elif e.type == pygame.KEYDOWN:
-		keydown(e)
+		if e.key == pygame.K_ESCAPE:
+			exit()
+		else:
+			keydown(e)
 
 
 def loop():
