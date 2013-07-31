@@ -6,6 +6,17 @@
 
 
 
+
+lines = []
+vscroll = 0 #amount of lines scrolled
+done = False
+fline = 0
+fitem = None
+tab = 3
+
+
+
+
 import copy
 
 
@@ -72,12 +83,14 @@ def init_gui():
 	global font_h
 	global screen
 	global screen_rows
+	global screen_w
 
 	pygame.init()
 	pygame.display.set_caption("lemon")#window title
 	#sdl, which pygame is based on, has its own keyboard delay and repeat rate
 	pygame.key.set_repeat(300,30)
-	screen = pygame.display.set_mode((640,480))
+	screen_w = 640
+	screen = pygame.display.set_mode((screen_w,480))
 
 	font = pygame.font.SysFont('monospace', 18)
 	font_w = font.render(" ",False,(0,0,0)).get_rect().width
@@ -92,18 +105,6 @@ def init_gui():
 
 
 
-lines = []
-vscroll = 0 #amount of lines scrolled
-done = False
-
-
-
-
-
-
-
-def clear_lines():
-	lines = [[] for i in range(0,screen_rows)]
 
 #mostly everything is in chars, until inside the draw() functions
 def topixels(x,y):
@@ -130,8 +131,8 @@ class control(object):
 		self.parent = parent
 		for c in self.controls:
 			c.setparent(self)
-	def imhere(self):
-		lines[len(lines)-1].append(self)
+	def imhere(self,r):
+		lines[r].append(self)
 	def copy(self):
 		return copy.copy(self)
 
@@ -164,7 +165,7 @@ class button(label):
 		if isvisible(c,r):
 			rect = self.rect(topixels(c,r))
 			pygame.gfxdraw.rectangle(screen, rect, pygame.Color("red"))
-			self.imhere()
+			self.imhere(r)
 		return super(self.__class__,self).render(self,c,r)
 		
 	def __init__(self, parent, text, handler):
@@ -205,7 +206,7 @@ class textbox(label):
 			startpos = (px+(self.cursorx*font_w), py)
 			endpos   = (startpos[0],startpos[1]+font_h)
 			pygame.draw.line(screen, (0, 155, 255), startpos, endpos, 3)#thickness
-			self.imhere()
+			self.imhere(r)
 			
 		return super(self.__class__,self).render(c+self.len(), r)
 
@@ -230,6 +231,7 @@ class block(control):
 				r = r+1
 			else:
 				c,r = item.render(c,r)
+		self.imhere(r)
 		return c,r
 
 	def keydown(e):
@@ -242,9 +244,10 @@ class block(control):
 
 	
 class block_list(block):
-	def __init__(i,parent,items=[],indent=0):
+	def __init__(i,parent,items,indent=tab):
 		super(block_list,i).__init__(parent)
-		i.items = []
+		i.items = items
+		i.indent = indent
 	def setparent(i,parent):
 		super(block_list,i).setparent(parent)
 		print ("fixing orphans (",i.items,") of ",i,"::")
@@ -255,22 +258,9 @@ class block_list(block):
 	def render(i,c,r):
 		c,r=super(block_list,i).render(c,r)
 		for item in i.items:
-			_,r = item.render(c+3, r)
+			_,r = item.render(c+i.indent, r)
 			r=r+1
 		return c,r
-
-
-class indent(block_list):
-	def __init__(self, parent, items):
-		super(self.__class__,self).__init__(parent)
-		self.items = items
-	def render(self, c,r):
-		for item in i.items:
-			_,r = item.render(c+3, r)
-			r=r+1
-		return c,r
-	
-	
 
 
 class template():
@@ -347,16 +337,14 @@ class block_inputty(block):
 		
 
 
-root = block_list(0)
-
-root.items.append(
-	template_editor(0,template("if",
+root = block_list(0, [template_editor(0,template("if",
 			[[
 			label(0,"if "), 
 			dummy(0,"condition"),
 			newline(0), 
-			dummy(0,"then")
-			]])))
+			block_list(0,[dummy(0,"then")])
+			]]))
+		     ],1)
 
 root.items.append(templated(0,root.items[0].template))
 
@@ -383,6 +371,7 @@ dummy is replaced
 def draw():
 	clear_lines()
 	screen.fill((0,0,0))
+	pygame.gfxdraw.rectangle(screen, (0, fline * font_h, screen_w,  font_h), pygame.Color("red"))
 	root.render(0,0)
 	pygame.display.update()
 
@@ -397,18 +386,37 @@ def bye():
 	done = True
 
 
-def keydown(event):
-	focused.keydown()
 
+def clear_lines():
+	global lines
+	lines = [[] for i in range(0,screen_rows)]
+	print lines
+
+
+def activate():
+	print lines
+
+
+def keydown(e):
+	global fline
+	if e.key == pygame.K_UP:
+		if fline > 0:
+			fline -= 1
+			activate()
+	if e.key == pygame.K_DOWN:
+		if fline < screen_rows-1:
+			fline += 1
+			activate()
+
+#	focused.keydown()
 
 	
 def click(pos):
-	x,y=pos
-	print (x,y,clickables)
-	for item in clickables:
-		if item[0].collidepoint(x,y):
-			print(item[0])
-			item[0].click()
+	for line in lines:
+		for item in line:
+			if item[0].collidepoint(x,y):
+				print(item[0])
+				item[0].click()
 
 
 
