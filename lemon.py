@@ -7,22 +7,6 @@
 
 
 
-lines = []
-vscroll = 0 #amount of lines scrolled
-done = False
-fline = 0
-fitem = None
-tab = 3
-
-
-
-
-import copy
-
-
-
-
-
 contact = """
 irc: sirdancealot @ freenode
 https://github.com/koo5/lemon-operating-language
@@ -35,6 +19,53 @@ https://github.com/koo5/lemon-operating-language
 def shit(gone_wrong):
 	print(gone_wrong)
 	print("\nfor support:",contact)
+
+
+
+
+
+
+
+try:
+	import pygame
+	import pygame.gfxdraw
+except Exception as e:
+	shit("i need pygame. please install pygame. sudo apt-get install pygame / yum install pygame ....")
+	raise(e)
+
+import copy
+
+
+
+
+
+
+
+lines = []
+vscroll = 0 #amount of lines scrolled
+done = False
+fline = 0
+fitem = None
+tab = 3
+
+
+
+
+
+
+
+#syntax sugar
+
+class banana(object):
+	"""
+	aaa = banana()
+	aaa.bbb = 555
+	print aaa.bbb
+	"""
+	def __setattr__(s, n, v):
+		s.__dict__.update({n:v})
+
+
 
 
 
@@ -62,20 +93,6 @@ def ded(**args):
 
 
 
-try:
-	import pygame
-	import pygame.gfxdraw
-except Exception as e:
-	shit("i need pygame. please install pygame. sudo apt-get install pygame / yum install pygame ....")
-	raise(e)
-
-
-
-
-
-
-
-
 
 def init_gui():
 	global font
@@ -83,19 +100,25 @@ def init_gui():
 	global font_h
 	global screen
 	global screen_rows
+	global screen_cols
 	global screen_w
+	global screen_h
 
 	pygame.init()
 	pygame.display.set_caption("lemon")#window title
-	#sdl, which pygame is based on, has its own keyboard delay and repeat rate
+	#sdl, which pygame is based on, has its own repeat delay and repeat rate
 	pygame.key.set_repeat(300,30)
+
 	screen_w = 640
-	screen = pygame.display.set_mode((screen_w,480))
+	screen_h = 480
+	
+	screen = pygame.display.set_mode((screen_w,screen_h))
 
 	font = pygame.font.SysFont('monospace', 18)
 	font_w = font.render(" ",False,(0,0,0)).get_rect().width
 	font_h = font.get_height()
-	screen_rows = screen.get_height() / font_h
+	screen_rows = screen_h / font_h
+	screen_cols = screen_w / font_w
 
 	
 
@@ -126,15 +149,39 @@ def isvisible(x,y):
 class control(object):
 	def __init__(self,parent):
 		self.parent = parent
-		self.controls = []
+		self.children = [label(self, self.__repr__())]
+		self.last = banana()
 	def setparent(self, parent):
 		self.parent = parent
-		for c in self.controls:
+		for c in self.children:
 			c.setparent(self)
-	def imhere(self,r):
+	def imhere(self,c,r):
 		lines[r].append(self)
+		self.last.rect = self.rect()
 	def copy(self):
 		return copy.copy(self)
+		print "hmm"
+	def render(s, c,r):
+		for item in self.children:
+			c,r = item.render(c,r)
+		self.imhere(r)
+		return c,r
+		
+
+class block(control):
+	def __init__(self, parent):
+		super(block,self).__init__(parent)
+		self.gui = [label(self, self.__repr__()),newline(self)]
+	
+
+	def keydown(e):
+		print(e)
+#		if e.key == pygame.K_UP:
+#			self.parent.up()
+#		if e.key == pygame.K_DOWN:
+#			self.parent.down()
+		
+
 
 
 class label(control):
@@ -149,6 +196,7 @@ class label(control):
 	def render(self, c,r):
 		if isvisible(c,r):
 			screen.blit(font.render(self.text, True, self.color),topixels(c,r))
+			self.imhere()
 		return (c+self.len(),r)
 	def rect(self, c,r):
 		return pygame.Rect(c,r,font_width*self.len(),font_h)
@@ -168,9 +216,8 @@ class button(label):
 			self.imhere(r)
 		return super(self.__class__,self).render(self,c,r)
 		
-	def __init__(self, parent, text, handler):
+	def __init__(self, parent, text):
 		super(self.__class__,self).__init__(parent, text)
-		self.handler = handler
 
 class textbox(label):
 	def __init__(self, parent):
@@ -211,36 +258,8 @@ class textbox(label):
 		return super(self.__class__,self).render(c+self.len(), r)
 
 
-class block(control):
-	def __init__(self, parent):
-		super(block,self).__init__(parent)
-		self.gui = [label(self, self.__repr__()),newline(self)]
-	
-	def setparent(self,parent):
-		super(block,self).setparent(parent)
-		print ("fixing gui orphans of ",self," (",self.gui,"):")
-		for item in self.gui:
-			print ("item ",item)
-			item.setparent(self)
-
-	def render(self,c,r):
-		c0 = c
-		for item in self.gui:
-			if isinstance(item,newline):
-				c = c0
-				r = r+1
-			else:
-				c,r = item.render(c,r)
-		self.imhere(r)
-		return c,r
-
-	def keydown(e):
-		print(e)
-#		if e.key == pygame.K_UP:
-#			self.parent.up()
-#		if e.key == pygame.K_DOWN:
-#			self.parent.down()
-		
+	def rect(self, c,r):
+		return pygame.Rect(c,r,font_width*self.len(),font_h)
 
 	
 class block_list(block):
@@ -248,6 +267,7 @@ class block_list(block):
 		super(block_list,i).__init__(parent)
 		i.items = items
 		i.indent = indent
+		i.controls = [button
 	def setparent(i,parent):
 		super(block_list,i).setparent(parent)
 		print ("fixing orphans (",i.items,") of ",i,"::")
@@ -371,7 +391,12 @@ dummy is replaced
 def draw():
 	clear_lines()
 	screen.fill((0,0,0))
+	
 	pygame.gfxdraw.rectangle(screen, (0, fline * font_h, screen_w,  font_h), pygame.Color("red"))
+
+	if focus != None:
+		pygame.gfxdraw.rectangle(screen, (0, fline * font_h, screen_w,  font_h), pygame.Color("red"))
+	
 	root.render(0,0)
 	pygame.display.update()
 
@@ -394,7 +419,10 @@ def clear_lines():
 
 
 def activate():
+	global focus
 	print lines
+	if len(lines[fline]) > 0:
+		focus = lines[fline][0]
 
 
 def keydown(e):
