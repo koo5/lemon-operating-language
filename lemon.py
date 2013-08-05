@@ -1,4 +1,3 @@
-##!/usr/bin/python3
 #-*- coding: utf-8 -*-
 #lemon operating language bootstrap
 
@@ -14,7 +13,7 @@ https://github.com/koo5/lemon-operating-language
 
 
 
-
+"""
 
 def shit(gone_wrong):
 	print(gone_wrong)
@@ -57,11 +56,10 @@ tab = 3
 #syntax sugar
 
 class banana(object):
-	"""
-	aaa = banana()
-	aaa.bbb = 555
-	print aaa.bbb
-	"""
+	#aaa = banana()
+	#aaa.bbb = 555
+	#print aaa.bbb
+
 	def __setattr__(s, n, v):
 		s.__dict__.update({n:v})
 
@@ -267,7 +265,7 @@ class block_list(block):
 		super(block_list,i).__init__(parent)
 		i.items = items
 		i.indent = indent
-		i.controls = [button
+#		i.controls = button
 	def setparent(i,parent):
 		super(block_list,i).setparent(parent)
 		print ("fixing orphans (",i.items,") of ",i,"::")
@@ -285,8 +283,6 @@ class block_list(block):
 
 class template():
 	def __init__(self, name, views):
-		self.name = name
-		self.views = views
 
 
 		
@@ -306,8 +302,9 @@ class templated(block):
 class template_editor(block):
 	def __init__(self, parent, template):
 		super(template_editor,self).__init__(parent)
-		self.template = template
-		self.gui = [label(0,"ill be a template editor..one day!")]
+		self.name = name
+		self.view = view
+		self.gui = lines([line([label(0,name+" template:")]),line([     ])
 
 
 class dummy(block):
@@ -374,14 +371,12 @@ focused = root.items[0]
 
 root.setparent(0)
 
-"""
-dummy is focused
-key is pressed
-menu is displayed
-item is selected
-dummy is replaced
-...
-"""
+#dummy is focused
+#key is pressed
+#menu is displayed
+#item is selected
+#dummy is replaced
+#...
 
 
 
@@ -482,22 +477,28 @@ def main():
 
 
 
+"statement":["if","while","defun"],
 
 
+if_template = [template_editor(0,
+		template("if",
+			[[
+			label(0,"if "), 
+			dummy(0,"condition"),
+			newline(0), 
+			block_list(0,[dummy(0,"then")])
+			]]))]
 
 
 class language():
-	#menu(item)
-	pass
-	#sooomewhere over the rainbow
 
+	def menu(type):
+		
 
 #block view editor
 #class block_def(block):
-#	"""
 #	name
 #	views[]
-#	"""
 #	def update_gui(self):
 #		self.gui = [gui_text("blockt type: "), gui_textbox(self.name), gui_text(":"), gui_newline()]
 #		self.gui = [gui_text("children: "), gui_newline()]
@@ -507,3 +508,63 @@ class language():
 #				if i.class == gui.text:
 #					self.gui.append(gui.textbox(i.text))
 #			self.gui = self.gui + [gui_newline()]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+
+from macropy.case_classes import macros, case
+
+@case
+class AA(rect, node): pass
+
+#results = lines[]
+#line = []
+#grid menu?
+
+class m():
+	pass
+	
+for s in ["i am this big"]:
+	m.__dict__[s.replace(" ", "_")] = s
+
+
+class nodelist():
+	pass
+
+#root = nodelist(parent=0, indent=2, nodes=[])
+
+
+'''
+to_render(nodelist,
+	
+	itemrect = .i_am_this_big
+	rect = union(rect, itemrect)
+	return m({id("i am this big"), 
+'''	
+
+def main():
+	print AA(0,0)
+	ffgt4wf4t=5
