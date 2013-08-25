@@ -1,4 +1,3 @@
-##!/usr/bin/python3
 #-*- coding: utf-8 -*-
 #lemon operating language bootstrap
 
@@ -7,17 +6,16 @@
 
 
 
-lines = []
-vscroll = 0 #amount of lines scrolled
 done = False
-fline = 0
-fitem = None
-tab = 3
+row = 0
+col = 0
+
+indent_spaces = 3
 
 
 
 
-import copy
+
 
 
 
@@ -40,24 +38,6 @@ def shit(gone_wrong):
 
 
 
-#indented (debug) output
-
-def out(**args):
-	print (["  "*indentation], args)
-
-def ind(**args):
-	global indentation
-	out(args)
-	indentation = indentation + 1
-
-def ded(**args):
-	global indentation
-	out(args)
-	indentation = indentation - 1
-
-
-
-
 
 
 
@@ -74,103 +54,92 @@ except Exception as e:
 
 
 
+import pickle
 
 
 
-def init_gui():
-	global font
-	global font_w
-	global font_h
-	global screen
-	global screen_rows
-	global screen_w
 
-	pygame.init()
-	pygame.display.set_caption("lemon")#window title
-	#sdl, which pygame is based on, has its own keyboard delay and repeat rate
-	pygame.key.set_repeat(300,30)
-	screen_w = 640
-	screen = pygame.display.set_mode((screen_w,480))
 
-	font = pygame.font.SysFont('monospace', 18)
-	font_w = font.render(" ",False,(0,0,0)).get_rect().width
-	font_h = font.get_height()
-	screen_rows = screen.get_height() / font_h
 
+class Screen():
+	def __init__(s):
+    	pygame.init()
+    	pygame.display.set_caption("lol") #window title
+
+    	#sdl, which pygame is based on, has its own keyboard delay and repeat rate
+    	pygame.key.set_repeat(300,30) #first candidate for a settings block
+
+    	s.w = 640
+    	s.h = 480
+    	s.s = pygame.display.set_mode((s.w,s.h))
+
+    	s.f = pygame.font.SysFont('monospace', 18)
+    	s.fw = s.font.render(" ",False,(0,0,0)).get_rect().width
+    	s.fh = s.font.get_height()
+    	s.rows = s.s.get_height() / s.font_h
+
+    	s.vscroll = 0
+    	s.hscroll = 0
+
+	def text(text,color,x,y):
+		s.blit(s.font.render(text, True, color), x, y)
+
+
+
+
+
+
+scr = Screen()
+
+
+
+
+
+
+
+
+
+class Element(object):
 	
+	def __init__(s,parent):
+		s.parent = parent
+		
+	def setparent(s, parent):
+		s.parent = parent
+		
+	def setpos(s,x,y):
+		s.x=x
+		s.y=y
 
 
-
-
-
-
-
-
-#mostly everything is in chars, until inside the draw() functions
-def topixels(x,y):
-	return x * font_w, (y-vscroll) * font_h
-
-#are we on screen?
-def isvisible(x,y):
-	return y >= vscroll and (y-vscroll) < screen_rows
-
-
-
-
-
-
-
-
-
-
-class control(object):
-	def __init__(self,parent):
-		self.parent = parent
-		self.controls = []
-	def setparent(self, parent):
-		self.parent = parent
-		for c in self.controls:
-			c.setparent(self)
-	def imhere(self,r):
-		lines[r].append(self)
-	def copy(self):
-		return copy.copy(self)
-
-
-class label(control):
-	def __init__(self, parent, text, color=pygame.Color("white")):
-		super(label,self).__init__(parent)
-		self.text = text
+class Text(Element):
+	
+	def __init__(s, parent, text, color=pygame.Color("white")):
+		Element.__init__(parent)
+		s.text = text
 		if isinstance(color, str):
 			color = pygame.Color(color)
-		self.color = color
-	def len(self):
-		return len(self.text)
-	def render(self, c,r):
-		if isvisible(c,r):
-			screen.blit(font.render(self.text, True, self.color),topixels(c,r))
-		return (c+self.len(),r)
-	def rect(self, c,r):
-		return pygame.Rect(c,r,font_width*self.len(),font_h)
+		s.color = color
+		
+	def len(s):
+		return len(s.text)
+		
+	def draw(s):
+		scr.text(s.text, s.color, s.x, s.y)
+		
+	def getrect(s):
+		return pygame.Rect(s.x, s.y, scr.fw*s.len(),scr.fh)
 
 
-class newline(control):
-	def __init__(self,parent):
-		super(self.__class__,self).__init__(parent)
-#	def render(self, c,r):
-#		return (0,r+1)
+class Button(Text):
+	def __init__(self, parent, text):
+		Text.__init__(parent, text)
+
+	def draw(s):
+		pygame.gfxdraw.rectangle(scr.s, s.getrect(), pygame.Color("red"))
+		Text.draw()
 		
-class button(label):
-	def render(self, c,r):
-		if isvisible(c,r):
-			rect = self.rect(topixels(c,r))
-			pygame.gfxdraw.rectangle(screen, rect, pygame.Color("red"))
-			self.imhere(r)
-		return super(self.__class__,self).render(self,c,r)
-		
-	def __init__(self, parent, text, handler):
-		super(self.__class__,self).__init__(parent, text)
-		self.handler = handler
+	def event(s,e):
 
 class textbox(label):
 	def __init__(self, parent):
@@ -387,10 +356,10 @@ def bye():
 
 
 
-def clear_lines():
-	global lines
-	lines = [[] for i in range(0,screen_rows)]
-	print lines
+def save():
+	pkl = open('code.pkl', 'wb')
+	pickle.dump(root,pkl)
+	pkl.close()
 
 
 def activate():
