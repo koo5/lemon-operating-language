@@ -31,6 +31,28 @@ class TestElement(unittest.TestCase):
             for x in range(random.randint(4, 9)):
                 SubElement(element)
 
+    def test_find_element(self):
+        root = Element(root=True)
+        a = Element(root)
+        c = Element(a)
+        e = SubElement(c)
+
+        self.assertTrue(a.searchChildren(c))
+        self.assertTrue(a.searchChildren(e))
+        self.assertTrue(c.searchChildren(e))
+
+        self.assertFalse(a.searchChildren(a))
+
+        b = Element(root)
+        d = Element(b)
+        f = Element(d)
+
+        self.assertTrue(b.searchChildren(d))
+        self.assertTrue(b.searchChildren(f))
+        self.assertTrue(d.searchChildren(f))
+
+        self.assertFalse(b.searchChildren(a))
+
 
 if __name__ == '__main__':
     unittest.main()
