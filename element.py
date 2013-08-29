@@ -1,7 +1,7 @@
 __author__ = 'ankhmorporkian'
 
-import LemonLogger
-from LemonExceptions import *
+import lemon_logger
+from lemon_exceptions import *
 
 
 class Element(object):
@@ -9,7 +9,7 @@ class Element(object):
 
     def __init__(self, parent=None, render=True, root=False):
 
-        self.logger = LemonLogger.LemonLogger()
+        self.logger = lemon_logger.LemonLogger()
         self.children = []
         self.render = render
 

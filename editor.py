@@ -1,7 +1,7 @@
 __author__ = 'ankhmorporkian'
-from LemonLogger import LemonLogger
+from lemon_logger import LemonLogger
 import pygame
-from Element import *
+from element import *
 
 logger = LemonLogger()
 
