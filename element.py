@@ -34,7 +34,7 @@ class Element(object):
 
     def getChild(self, index):
         """
-        Returns child element at position index
+        Returns the child element at position index
         :param index: Position
         :return: :rtype: Element
         """
