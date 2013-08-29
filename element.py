@@ -10,13 +10,12 @@ class Element(object):
     def __init__(self, parent=None, render=True, root=False):
 
         self.logger = lemon_logger.LemonLogger()
-        self.children = []
+        self.__children = []
         self.render = render
 
         if (type(self) != Element) and root:  # Verify not a derived class if trying to assign as a root object.
             raise RootNotElement
-
-        if (not self.verifyElement(parent)) and (not root):  # Ensure parent is an object if not root
+        elif (not self.verifyElement(parent)) and (not root):  # Ensure parent is an object if not root
             raise InvalidElement
         elif root:
             self.__parent = None  # Root objects never have parents.
@@ -27,16 +26,13 @@ class Element(object):
             self.root = False
 
     def getChildren(self):
-        return self.children
+        return self.__children
 
     def __setChildren(self, children):
-        self.children = children
+        self.__children = children
 
     def __setChild(self, index, child):
-        try:
-            self.children[index] = child
-        except IndexError:
-            self.logger.critical("Index error in " + str(self) + ":setChild")
+        self.__children.insert(index, child)
 
     def addChild(self, child):
         if child.root:
@@ -45,34 +41,31 @@ class Element(object):
             raise InvalidElement
 
     def getChild(self, index):
-        try:
-            return self.children[index]
-        except IndexError:
-            self.logger.critical("Index error in " + str(self) + ":getChild")
+        return self.__children[index]
 
     def addChild(self, child):
         if self.cycleSearch(child):
             raise CyclicElement
         else:
-            self.children.append(child)
+            self.__children.append(child)
             return True
 
     def __delChild(self, index):
         try:
-            self.children.pop(index)
+            self.__children.pop(index)
         except IndexError:
             self.logger.critical("Index error in " + str(self) + ":delChild")
             raise IndexError
 
     def delChild(self, child_to_delete):
-        for index, child in enumerate(self.children):
+        for index, child in enumerate(self.__children):
             if child_to_delete == child:
                 self.__delChild(index)
                 return True
         raise ElementNotFound
 
     def delChildTree(self, child_to_delete):
-        for index, child in enumerate(self.children):
+        for index, child in enumerate(self.__children):
             if child == child_to_delete:
                 self.__delChild(index)
                 return True
@@ -125,7 +118,7 @@ class Element(object):
 
     def searchChildren(self, element):
         """Simple recursive check from membership."""
-        for child in self.children:
+        for child in self.__children:
             if child == element or child.searchChildren(element):
                 return True
         return False
@@ -140,6 +133,9 @@ class Element(object):
         while not current_object.isRoot():  # TODO: Infinite loops should be impossible, but I want to verify that.
             current_object = current_object.getParent()
         return current_object
+
+    def childCount(self):
+        return len(self.__children)
 
     def render(self, column, row):
         """
