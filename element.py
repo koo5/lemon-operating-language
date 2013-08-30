@@ -141,10 +141,20 @@ class Element(object):
             current_object = current_object.getParent()
         return current_object
 
-    def render(self, column, row):
+    def setPosition(self, column, row):
         """
-        Perform rendering tasks for the element.
+        Set the position of the element, in character space.
         :param column:
         :param row:
         """
-        pass
+        self.column = column
+        self.row = row
+        for child in self.children:
+            child.setPosition(column, row)#...
+
+    def draw(self):
+        """
+        Perform rendering tasks for the element.
+        """
+        for child in self.children:
+            child.draw()
