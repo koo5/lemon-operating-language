@@ -6,7 +6,5 @@ import editor
 
 editor_window_1 = editor.EditorWindow()
 
-editor_window_1.switch_to()
-
 pyglet.app.run()
 

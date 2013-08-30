@@ -22,6 +22,7 @@ class EditorWindow(pyglet.window.Window):
     def __init__(self, title='Lemon editor', font_name="monospace", font_size=18):
         super(EditorWindow, self).__init__(caption=title,
                                            resizable=True)
+        self.set_icon(pyglet.image.load("icon32x32.png"))
         self.setupGl()
         self.font = Font(font_name, font_size)
         self.root_element = Element(root=True)
@@ -38,6 +39,9 @@ class EditorWindow(pyglet.window.Window):
         self.active_element = self.root_element.getChild(0)
         self.caret_visible = True
         pyglet.clock.schedule_interval(self.blink, .75)
+
+    def toggleFullscreen(self):
+        self.setFullscreen(not self.fullscreen)
 
     def setupGl(self):
         glClearColor(0, 0, 0, 1)
