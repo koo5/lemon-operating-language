@@ -225,7 +225,7 @@ class Element(object):
     def draw(self, *args, **kwargs):
         offset = 0
         for x in self.getChildren():
-            offset += x.getSize() + 5
+            offset += x.getHeight() + 5
             x.draw(y=offset, *args, **kwargs)
 
 
@@ -237,7 +237,7 @@ class Element(object):
             #    x.searchChildren()
             #return False
 
-    def getSize(self):
+    def getHeight(self):
         pass
 
 
@@ -247,6 +247,12 @@ class TextElement(Element):
         self.__text = text
         self.logger.info('Set text in TextElement to: ' + self.__text)
         self.font = Font(font_name, font_size)
+        self.label = pyglet.text.Label(' ',
+                                       font_name=self.font.name,
+                                       font_size=self.font.size,
+                                       x=0, y=0)
+        self.letter_width = self.label.content_width
+        self.draw()
 
     def draw(self, x=0, y=0, y_flip=True, y_height=None, y_offset=0):
         #self.logger.info(y_height)
@@ -257,28 +263,67 @@ class TextElement(Element):
         else:
             y = self.y
             #self.logger.info("X,Y,y_height",self.x,self.y,y_height,y_offset)
-        label = pyglet.text.Label(self.__text,
-                                  font_name=self.font.name,
-                                  font_size=self.font.size,
-                                  x=self.x, y=y)
-        label.draw()
+        self.label = pyglet.text.Label(self.__text,
+                                       font_name=self.font.name,
+                                       font_size=self.font.size,
+                                       x=self.x, y=y)
+        self.label.draw()
 
     def getX(self):
         return self.x
 
     def getY(self):
-        return self.y
+        return self.label.y
 
-    def getSize(self):
-        return self.font.size
+    def getHeight(self):
+        return self.label.content_height
+
+    def addText(self, letter, index=0):
+        self.__text = letter.join([self.__text[:index], self.__text[index:]])
+
+    def popText(self, index):
+        if index < 0:
+            return False
+        else:
+            self.__text = ''.join([self.__text[:index], self.__text[index + 1:]])
+            return True
+
+
+    def getWidth(self):
+        return self.label.content_width
+
+    def getLetterWidth(self):
+        return self.letter_width
+
+    def getLen(self):
+        return len(self.__text)
 
 
 class ButtonElement(Element):
     def __init__(self, parent, height=30, width=30):
         super(ButtonElement, self).__init__(parent=parent)
+        self.height = height
+        self.width = width
+
+    def draw(self, y=100, x=100, y_offset=0, y_flip=True, y_height=None, *args, **kwargs):
+        if y_flip and isinstance(y_height, int):
+            y = y_height - y
+        x1 = x
+        y1 = y
+        x2 = x + self.width
+        y2 = y + 20
+        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', (x1, y1, x1, y2, x2, y2, x2, y1)))
+
+    def getHeight(self):
+        return self.height
 
 
 class Font(object):
     def __init__(self, name='monospace', size=12):
         self.name = name
         self.size = size
+
+
+class Rectangle(object):
+    def __init__(self, x1, y1, x2, y2):
+        self.rectangle = pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', (x1, y1, x1, y2, x2, y2, x2, y1)))
