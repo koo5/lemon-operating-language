@@ -19,7 +19,7 @@ class Element(object):
         self.logger = lemon_logger.LemonLogger()
         self.__children = []
         self.render = render
-
+        self.root = False
         if (type(self) != Element) and root:  # Verify not a derived class if trying to assign as a root object.
             raise RootNotElement
         elif (not self.verifyElement(parent)) and (not root):  # Ensure parent is an object if not root
@@ -46,7 +46,7 @@ class Element(object):
 
         :param child: Element
         """
-        if child.root:
+        if child.isRoot():
             raise RootNoParent
         elif not self.verifyElement(child):
             raise InvalidElement
