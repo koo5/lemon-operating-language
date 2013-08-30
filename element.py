@@ -225,7 +225,7 @@ class Element(object):
     def draw(self, *args, **kwargs):
         offset = 0
         for x in self.getChildren():
-            offset += x.font.size + 5
+            offset += x.getSize() + 5
             x.draw(y=offset, *args, **kwargs)
 
 
@@ -236,6 +236,9 @@ class Element(object):
             #            return x.y
             #    x.searchChildren()
             #return False
+
+    def getSize(self):
+        pass
 
 
 class TextElement(Element):
@@ -260,11 +263,19 @@ class TextElement(Element):
                                   x=self.x, y=y)
         label.draw()
 
-        def getX(self):
-            return self.x
+    def getX(self):
+        return self.x
 
-        def getY(self):
-            return self.y
+    def getY(self):
+        return self.y
+
+    def getSize(self):
+        return self.font.size
+
+
+class ButtonElement(Element):
+    def __init__(self, parent, height=30, width=30):
+        super(ButtonElement, self).__init__(parent=parent)
 
 
 class Font(object):
