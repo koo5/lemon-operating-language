@@ -5,6 +5,7 @@ import logging
 
 class LemonLogger():
     """Logging class for lemon."""
+
     def __init__(self, logger_name='lemon_main'):
         logging.basicConfig(level=logging.INFO)
         self.__logger = logging.getLogger(logger_name)
@@ -35,4 +36,6 @@ class LemonLogger():
         Log an informational message.
         :param msg: Information to be logged.
         """
+        for arg in args:
+            msg += ' ' + str(arg)
         self.__logger.info(msg)

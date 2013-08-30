@@ -1,5 +1,7 @@
 __author__ = 'ankhmorporkian'
 
+import pyglet
+
 import lemon_logger
 from lemon_exceptions import *
 
@@ -220,9 +222,52 @@ class Element(object):
         for child in self.__children:
             child.setPosition(column, row)#...
 
-    def draw(self):
-        """
-        Perform rendering tasks for the element.
-        """
-        for child in self.__children:
-            child.draw()
+    def draw(self, *args, **kwargs):
+        offset = 0
+        for x in self.getChildren():
+            offset += x.font.size + 5
+            x.draw(y=offset, *args, **kwargs)
+
+
+            #def searchChildren(self, *args, **kwargs):
+            #for x in self.getChildren():
+            #    for y in args:
+            #        if x.y:
+            #            return x.y
+            #    x.searchChildren()
+            #return False
+
+
+class TextElement(Element):
+    def __init__(self, parent, render=True, text='', font_name='monospace', font_size=12):
+        super(TextElement, self).__init__(parent, render, False)
+        self.__text = text
+        self.logger.info('Set text in TextElement to: ' + self.__text)
+        self.font = Font(font_name, font_size)
+
+    def draw(self, x=0, y=0, y_flip=True, y_height=None, y_offset=0):
+        #self.logger.info(y_height)
+        self.x = x
+        self.y = y - y_offset
+        if y_flip and isinstance(y_height, int):
+            y = y_height - self.y
+        else:
+            y = self.y
+            #self.logger.info("X,Y,y_height",self.x,self.y,y_height,y_offset)
+        label = pyglet.text.Label(self.__text,
+                                  font_name=self.font.name,
+                                  font_size=self.font.size,
+                                  x=self.x, y=y)
+        label.draw()
+
+        def getX(self):
+            return self.x
+
+        def getY(self):
+            return self.y
+
+
+class Font(object):
+    def __init__(self, name='monospace', size=12):
+        self.name = name
+        self.size = size
