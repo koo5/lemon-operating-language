@@ -217,12 +217,12 @@ class Element(object):
         """
         self.column = column
         self.row = row
-        for child in self.children:
+        for child in self.__children:
             child.setPosition(column, row)#...
 
     def draw(self):
         """
         Perform rendering tasks for the element.
         """
-        for child in self.children:
+        for child in self.__children:
             child.draw()
