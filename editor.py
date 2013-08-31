@@ -16,7 +16,7 @@ logger = LemonLogger()
 
 class EditorWindow(pyglet.window.Window):
     """
-    Editor class, creates an editing window for the lemon language.
+    EditorWindow class, creates an editing window for the lemon language.
     """
 
     def __init__(self, title='Lemon editor', font_name="monospace", font_size=18):
@@ -62,7 +62,9 @@ class EditorWindow(pyglet.window.Window):
         self.root_element.draw(y_height=0, y_offset=int(self._height + self.cursor_row))
         if self.cursor_col > self.active_element.getLen():
             self.cursor_col = self.active_element.getLen()
-        self.caret()
+        self.drawCaret()
+#        logger.info("on_draw")
+
 
     def blink(self, dt):
         self.caret_visible = not self.caret_visible
@@ -70,41 +72,41 @@ class EditorWindow(pyglet.window.Window):
         #('v2i', (10, 15, 300, 350)),
         #('c3B', (255, 255, 255, 0, 255, 0)))
 
-    def caret(self):
+    def drawCaret(self):
         active_x_offset = self.cursor_col * self.active_element.getLetterWidth()
         active_x = self.active_element.getX() + active_x_offset
         active_y = self.active_element.getY()
         active_height = self.active_element.getHeight()
         active_width = self.active_element.getWidth()
-        if self.caret_visible: Rectangle(active_x, active_y + active_height, active_x + 1, active_y)
-
-    def on_key_press(self, symbol, modifiers):
-        #logger.info("key-handler")
-        if symbol in [key.UP, key.DOWN, key.LEFT, key.RIGHT]:
-            self.cursorKey(symbol)
+        if self.caret_visible: 
+            glColor3f(1,1,1)
         else:
-            self.type_letter(symbol)
+            glColor3f(0.2,0.2,0.2)
+        Rectangle(active_x, active_y + active_height, active_x + 1, active_y)
 
-    def type_letter(self, k):
-        keycodes = dict(zip([key.A, key.B, key.C, key.D, key.E, key.F, key.G, key.H, key.I, key.J, key.K, key.L
-                                , key.M, key.N, key.O, key.P, key.Q, key.R, key.S, key.T, key.U, key.V, key.W, key.X,
-                             key.Y, key.Z], ascii_lowercase))
-
-        if k in keycodes:
-            self.addLetter(keycodes[k])
+    def on_text_motion(self, k):
+        #logger.info("key-handler")
         if k == key.BACKSPACE:
             self.backspaceLetter()
-        if k == key.SPACE:
-            self.addLetter(' ')
         if k == key.DELETE:
             self.delLetter()
         if k == key.HOME:
             self.cursor_col = 0
         if k == key.END:
             self.cursor_col = self.active_element.getLen()
+        if k == key.UP:
+            self.cursor_row -= 1
+        if k == key.DOWN:
+            self.cursor_row += 1
+        if k == key.LEFT:
+            self.cursor_col -= 1
+        if k == key.RIGHT:
+            self.cursor_col += 1
+        self.updateActiveElement()
+        self.pauseCaret()
 
-    def addLetter(self, letter):
-        self.active_element.addText(letter, self.cursor_col)
+    def on_text(self, text):
+        self.active_element.addText(text, self.cursor_col)
         self.cursor_col += 1
 
     def backspaceLetter(self):
@@ -114,16 +116,12 @@ class EditorWindow(pyglet.window.Window):
     def delLetter(self):
         self.active_element.popText(self.cursor_col)
 
-    def cursorKey(self, symbol):
-        if symbol == key.UP:
-            self.cursor_row -= 1
-        elif symbol == key.DOWN:
-            self.cursor_row += 1
-        elif symbol == key.LEFT:
-            self.cursor_col -= 1
-        elif symbol == key.RIGHT:
-            self.cursor_col += 1
-        self.updateActiveElement()
+
+    def pauseCaret(self):
+        """postpones caret blink (when moving, editing)"""
+        self.caret_visible = True
+        pyglet.clock.unschedule(self.blink)
+        pyglet.clock.schedule_interval(self.blink, .75)
 
     def on_mouse_press(self, x, y, button, modifiers):
         if button == mouse.LEFT:
