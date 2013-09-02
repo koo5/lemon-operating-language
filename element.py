@@ -6,6 +6,7 @@ import pyglet
 
 import lemon_logger
 from lemon_exceptions import *
+import marisa_trie
 
 
 class Element(object):
@@ -341,7 +342,7 @@ class Rectangle(object):
 
 
 class Template(object):
-    def __init__(self, template_string):
+    def __init__(self, template_string, name=None):
         self.template_list = template_string.split()
         self.value_dict = dict()
         self.re = re.compile("<<(.*)>>")
@@ -349,6 +350,10 @@ class Template(object):
             if self.re.findall(val):
                 self.template_list[idx] = self.re.findall(val)[0]
                 self.value_dict[self.re.findall(val)[0]] = idx
+        if name:
+            self.name = name
+        else:
+            self.name = self.template_list[0]
 
 
     def setValue(self, key, value):
@@ -370,3 +375,28 @@ class Value(object):
     def __init__(self, key, value=None):
         self.key = key
         self.value = value
+
+
+class TemplateManager(object):
+    def __init__(self):
+        self.templates = {}
+
+    def addTemplate(self, template):
+        if not isinstance(template, Template):
+            raise TypeError
+        self.templates[template.name] = template
+        return len(self.templates)
+
+    def getTemplate(self, name):
+        return self.templates[name]
+
+    def getTemplates(self):
+        return self.templates
+
+    def search(self, term):
+        trie = marisa_trie.Trie([unicode(value) for value in self.templates.keys()])
+        return self.templates[str(trie.keys(unicode(term))[0])]
+
+    def searchAll(self, term):
+        trie = marisa_trie.Trie([unicode(value) for value in self.templates.keys()])
+        return [str(value) for value in trie.keys(unicode(term))]

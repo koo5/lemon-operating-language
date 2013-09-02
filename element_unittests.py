@@ -76,6 +76,53 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(template.getValue('operator'), '>')
         self.assertEqual(template.compileTemplate(), 'if 1 > 0 then begin;')
 
+    def test_template_name(self):
+        template_name = "test"
+        template_string = "test <<a>> <<b>>"
+
+        self.assertEqual(Template(template_string).name, Template('foobar', name=template_name).name)
+        self.assertNotEqual(Template(template_string).name, Template('foobar').name)
+
+
+class TestTemplateManager(unittest.TestCase):
+    def setUp(self):
+        self.tm = TemplateManager()
+        self.template = Template('test123 <<a>> <<b>>')
+
+    def test_create(self):
+        self.assertEqual(self.tm.getTemplates(), {})
+
+    def test_add_template(self):
+        self.assertEqual(self.tm.addTemplate(self.template), 1)
+        self.assertEqual(self.tm.addTemplate(self.template), 1)  # Make sure that only one instance  is added.
+        self.assertRaises(TypeError, self.tm.addTemplate, 'sup')  # Make sure you can only add a Template object.
+        self.assertRaises(KeyError, self.tm.getTemplate, 'sup')
+        self.assertEqual(self.tm.addTemplate(Template('boom', name='bam')), 2)
+
+    def test_get_template(self):
+        self.tm.addTemplate(self.template)
+        self.assertEqual(self.tm.getTemplate('test123'), self.template)
+
+    def test_template_search(self):
+        self.tm.addTemplate(Template('if'))
+        self.tm.addTemplate(Template('while'))
+        self.tm.addTemplate(Template('when'))
+        self.tm.addTemplate(Template('for'))
+        self.tm.addTemplate(Template('define'))
+        self.assertEqual(self.tm.search('i').name, Template('if').name)
+        self.assertEqual(self.tm.search('wh').name, Template('when').name)
+        self.assertEqual(self.tm.search('whi').name, Template('while').name)
+        self.assertEqual(self.tm.search('f').name, Template('for').name)
+        self.assertEqual(self.tm.search('d').name, Template('define').name)
+
+    def test_search_all(self):
+        self.tm.addTemplate(Template('if'))
+        self.tm.addTemplate(Template('while'))
+        self.tm.addTemplate(Template('when'))
+        self.tm.addTemplate(Template('for'))
+        self.tm.addTemplate(Template('define'))
+        self.assertEqual(self.tm.searchAll('w'), ['when', 'while'])
+
 
 if __name__ == '__main__':
     unittest.main()
