@@ -37,6 +37,7 @@ class Element(object):
             parent.addChild(self)
             self.__parent = parent  # No need to do cycle check yet as there are no children assigned.
             self.root = False
+            self.template_manager = TemplateManager()
 
     def getChild(self, index):
         """
@@ -257,7 +258,7 @@ class TextElement(Element):
     def __init__(self, parent, render=True, text='', font_name='monospace', font_size=12):
         super(TextElement, self).__init__(parent, render, False)
         self.__text = text
-        self.logger.info('Set text in TextElement to: ' + self.__text)
+        #self.logger.info('Set text in TextElement to: ' + self.__text)
         self.font = Font(font_name, font_size)
         self.label = pyglet.text.Label(' ',
                                        font_name=self.font.name,
@@ -292,6 +293,7 @@ class TextElement(Element):
 
     def addText(self, letter, index=0):
         self.__text = letter.join([self.__text[:index], self.__text[index:]])
+        self.logger.info(self.template_manager.searchAll(self.__text))
 
     def popText(self, index):
         if index < 0:

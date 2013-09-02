@@ -27,9 +27,13 @@ class EditorWindow(pyglet.window.Window):
         Clock(self.root_element)
         self.root_element.setPosition(0, 0)
         #self.keys = key.KeyStateHandler()
+        tm = TemplateManager()
+        templates = ["for", "if", "while", "for2", "while2", "define", "when", "then"]  # Dumb starter elements
+        for name in templates:
+            tm.addTemplate(Template(name))
         for x in range(20):
-            TextElement(self.root_element, text='Test element ' + str(x), font_name="monospace", )
-        ButtonElement(self.root_element)
+            a = TextElement(self.root_element, text='', font_name="monospace", )
+            a.template_manager = tm
         self.x, self.y = self.get_location()
         self.y_offset = 0
         self.cursor_row = 0
