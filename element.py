@@ -293,7 +293,15 @@ class TextElement(Element):
 
     def addText(self, letter, index=0):
         self.__text = letter.join([self.__text[:index], self.__text[index:]])
-        self.logger.info(self.template_manager.searchAll(self.__text))
+        results = self.template_manager.searchAll(self.__text)
+        self.logger.info(self.__text)
+        if len(results) == 1:
+            self.logger.info("one template found! " + self.template_manager.search(results[0]).compileTemplate())
+            self.__text = self.template_manager.search(results[0]).compileTemplate()
+            return len(self.template_manager.search(results[0]).compileTemplate())
+        else:
+            self.logger.info(results)
+            return 1
 
     def popText(self, index):
         if index < 0:

@@ -28,7 +28,8 @@ class EditorWindow(pyglet.window.Window):
         self.root_element.setPosition(0, 0)
         #self.keys = key.KeyStateHandler()
         tm = TemplateManager()
-        templates = ["for", "if", "while", "for2", "while2", "define", "when", "then"]  # Dumb starter elements
+        templates = ["for", "if", "while", "for2", "while2", "define <<a>> as <<b>>", "when",
+                     "then"]  # Dumb starter elements
         for name in templates:
             tm.addTemplate(Template(name))
         for x in range(20):
@@ -109,8 +110,7 @@ class EditorWindow(pyglet.window.Window):
         self.pauseCaret()
 
     def on_text(self, text):
-        self.active_element.addText(text, self.cursor_col)
-        self.cursor_col += 1
+        self.cursor_col += self.active_element.addText(text, self.cursor_col)
 
     def backspaceLetter(self):
         if self.active_element.popText(self.cursor_col - 1):
