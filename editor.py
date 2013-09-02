@@ -1,7 +1,5 @@
 __author__ = 'ankhmorporkian & sirdancealot'
 
-from string import ascii_lowercase
-
 import pyglet
 from pyglet.gl import *
 from pyglet.window import key, mouse
@@ -63,14 +61,15 @@ class EditorWindow(pyglet.window.Window):
         if self.cursor_col > self.active_element.getLen():
             self.cursor_col = self.active_element.getLen()
         self.drawCaret()
-#        logger.info("on_draw")
+
+    #        logger.info("on_draw")
 
 
     def blink(self, dt):
         self.caret_visible = not self.caret_visible
         #pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
         #('v2i', (10, 15, 300, 350)),
-        #('c3B', (255, 255, 255, 0, 255, 0)))
+        #('c3B', (255, 255, 255, 0, 255, 0))) q
 
     def drawCaret(self):
         active_x_offset = self.cursor_col * self.active_element.getLetterWidth()
@@ -78,10 +77,10 @@ class EditorWindow(pyglet.window.Window):
         active_y = self.active_element.getY()
         active_height = self.active_element.getHeight()
         active_width = self.active_element.getWidth()
-        if self.caret_visible: 
-            glColor3f(1,1,1)
+        if self.caret_visible:
+            glColor3f(1, 1, 1)
         else:
-            glColor3f(0.2,0.2,0.2)
+            glColor3f(0.2, 0.2, 0.2)
         Rectangle(active_x, active_y + active_height, active_x + 1, active_y)
 
     def on_text_motion(self, k):
@@ -139,4 +138,3 @@ class EditorWindow(pyglet.window.Window):
 
     def updateActiveElement(self):
         self.active_element = self.root_element.getChild(self.cursor_row)
-    

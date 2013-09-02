@@ -1,5 +1,7 @@
 __author__ = 'ankhmorporkian'
 
+import re
+
 import pyglet
 
 import lemon_logger
@@ -9,7 +11,7 @@ from lemon_exceptions import *
 class Element(object):
     """Base element that all GUI elements derive from"""
 
-    def __init__(self, parent=None, render=True, root=False):
+    def __init__(self, parent=None, render=True, root=False, template=None):
 
         """
         Initialize element.
@@ -22,6 +24,7 @@ class Element(object):
         self.__children = []
         self.render = render
         self.root = False
+        self.template = template
         if (type(self) != Element) and root:  # Verify not a derived class if trying to assign as a root object.
             raise RootNotElement
         elif (not self.verifyElement(parent)) and (not root):  # Ensure parent is an object if not root
@@ -240,6 +243,14 @@ class Element(object):
     def getHeight(self):
         pass
 
+    def setTemplate(self, template):
+        if not isinstance(template, Template):
+            raise TypeError
+        self.template = template
+
+    def getTemplate(self):
+        return self.template
+
 
 class TextElement(Element):
     def __init__(self, parent, render=True, text='', font_name='monospace', font_size=12):
@@ -327,3 +338,35 @@ class Font(object):
 class Rectangle(object):
     def __init__(self, x1, y1, x2, y2):
         self.rectangle = pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', (x1, y1, x1, y2, x2, y2, x2, y1)))
+
+
+class Template(object):
+    def __init__(self, template_string):
+        self.template_list = template_string.split()
+        self.value_dict = dict()
+        self.re = re.compile("<<(.*)>>")
+        for idx, val in enumerate(self.template_list):
+            if self.re.findall(val):
+                self.template_list[idx] = self.re.findall(val)[0]
+                self.value_dict[self.re.findall(val)[0]] = idx
+
+
+    def setValue(self, key, value):
+        if key in self.value_dict:
+            self.template_list[self.value_dict[key]] = value
+            return True
+        else:
+            return False
+
+    def getValue(self, key):
+        if key in self.value_dict:
+            return self.template_list[self.value_dict[key]]
+
+    def compileTemplate(self):
+        return ' '.join(self.template_list)
+
+
+class Value(object):
+    def __init__(self, key, value=None):
+        self.key = key
+        self.value = value

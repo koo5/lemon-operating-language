@@ -53,6 +53,29 @@ class TestElement(unittest.TestCase):
 
         self.assertFalse(b.searchChildren(a))
 
+    def test_template_add(self):
+        template = Template('if <<a>> <<operator>> <<b>> then begin;\n<<stuff>>;\nend;')
+        root = Element(root=True)
+        self.assertEqual(root.getTemplate(), None)
+        root.setTemplate(template)
+        self.assertEqual(root.getTemplate().compileTemplate(), template.compileTemplate())
+
+
+class TestTemplate(unittest.TestCase):
+    def setUp(self):
+        self.root = Element(root=True)
+
+    def test_if_set(self):
+        template_string = "if <<first>> <<operator>> <<second>> then begin;"
+        template = Template(template_string)
+        template.setValue('first', '1')
+        template.setValue('operator', '>')
+        template.setValue('second', '0')
+        self.assertEqual(template.getValue('first'), '1')
+        self.assertEqual(template.getValue('second'), '0')
+        self.assertEqual(template.getValue('operator'), '>')
+        self.assertEqual(template.compileTemplate(), 'if 1 > 0 then begin;')
+
 
 if __name__ == '__main__':
     unittest.main()
