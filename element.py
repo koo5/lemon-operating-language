@@ -378,7 +378,10 @@ class Template(object):
             return self.template_list[self.value_dict[key]]
 
     def compileTemplate(self):
-        return ' '.join(self.template_list)
+        return ' '.join([str(item) for item in self.template_list])
+
+    def __str__(self):
+        return self.compileTemplate()
 
 
 class Value(object):

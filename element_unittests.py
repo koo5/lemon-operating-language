@@ -76,6 +76,12 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(template.getValue('operator'), '>')
         self.assertEqual(template.compileTemplate(), 'if 1 > 0 then begin;')
 
+    def test_templates(self):
+        a = Template("while <<condition>> do (newline) <<indented_body>>")
+        a.setValue('condition', Template("my banana is on fire"))
+        a.setValue('indented_body', Template("many indented codez"))
+        self.assertEqual(a.compileTemplate(), "while my banana is on fire do (newline) many indented codez")
+
     def test_template_name(self):
         template_name = "test"
         template_string = "test <<a>> <<b>>"
