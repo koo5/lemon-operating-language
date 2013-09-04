@@ -1,41 +1,50 @@
+#!/usr/bin/python2
+# -*- coding: utf-8 -*-
+
 __author__ = 'ankhmorporkian'
 
-import re
-
-import pyglet
-
-import lemon_logger
 from lemon_exceptions import *
+import lemon_logger
 import marisa_trie
+import pyglet
+import re
 
 
 class Element(object):
+
     """Base element that all GUI elements derive from"""
 
-    def __init__(self, parent=None, render=True, root=False, template=None):
-
+    def __init__(
+        self,
+        parent=None,
+        render=True,
+        root=False,
+        template=None,
+        ):
         """
         Initialize element.
-        :param parent: Parent, must be instance of Element if root is False, and will be None is root is True.
+        :param parent: Parent, must be instance of Element if root is False,
+            and will be None is root is True.
         :param render: Render the element or not?
         :param root: Root element on which other elements attach.
 
         """
+
         self.logger = lemon_logger.LemonLogger()
         self.__children = []
         self.render = render
         self.root = False
         self.template = template
-        if (type(self) != Element) and root:  # Verify not a derived class if trying to assign as a root object.
+        if type(self) != Element and root:
             raise RootNotElement
-        elif (not self.verifyElement(parent)) and (not root):  # Ensure parent is an object if not root
+        elif not self.verifyElement(parent) and not root:
             raise InvalidElement
         elif root:
-            self.__parent = None  # Root objects never have parents.
+            self.__parent = None
             self.root = True
         else:
             parent.addChild(self)
-            self.__parent = parent  # No need to do cycle check yet as there are no children assigned.
+            self.__parent = parent
             self.root = False
             self.template_manager = TemplateManager()
 
@@ -45,6 +54,7 @@ class Element(object):
         :param index: Position
         :return: :rtype: Element
         """
+
         return self.__children[index]
 
     def addChild(self, child):
@@ -53,6 +63,7 @@ class Element(object):
 
         :param child: Element
         """
+
         if child.isRoot():
             raise RootNoParent
         elif not self.verifyElement(child):
@@ -69,7 +80,8 @@ class Element(object):
         :param child_to_delete: Child element to remove from list.
         :return: :rtype: :raise:
         """
-        for index, child in enumerate(self.__children):
+
+        for (index, child) in enumerate(self.__children):
             if child_to_delete == child:
                 self.__delChild(index)
                 return True
@@ -81,7 +93,8 @@ class Element(object):
         :param child_to_delete: Child element to be deleted.
         :return: :rtype: :raise:
         """
-        for index, child in enumerate(self.__children):
+
+        for (index, child) in enumerate(self.__children):
             if child == child_to_delete:
                 self.__delChild(index)
                 return True
@@ -95,6 +108,7 @@ class Element(object):
 
         :return: :rtype: list
         """
+
         return self.__children
 
     def getParent(self):
@@ -103,24 +117,27 @@ class Element(object):
 
         :return: :rtype: Element
         """
+
         return self.__parent
 
     def setParent(self, parent):
-
         """
         Private Method
 
-        Reassign Element's parent to another parent. Must be of type element and much be consistent. Changes are not
-        made until all sanity checks are completed.
+        Reassign Element's parent to another parent. Must be of type
+        element and much be consistent. Changes are notmade until all
+        sanity checks are completed.
 
-        :param parent: Parent to reassign to. Will be checked to make sure there is not a cycle and is of type Element.
+        :param parent: Parent to reassign to. Will be checked to make sure
+            there is not a cycle and is of type Element.
         :return: :rtype: Boolean
         """
-        if self.root:  # Check if root element. If it is, refuse to assign a parent.
+
+        if self.root:
             raise RootNoParent
 
-        if not isinstance(parent, Element):  # Make sure that the parent is derived from type Element.
-            raise InvalidElement  # Maybe replace this with a parent specific exception?
+        if not isinstance(parent, Element):  # Enforce type Element()
+            raise InvalidElement
 
         if self == parent:
             raise SelfNoParent  # Element may not be its own parent.
@@ -129,22 +146,23 @@ class Element(object):
             raise CyclicElement  # Element may not be its own ancestor.
 
         # At this point we can assume the change is valid. Perform the changes.
+
         try:
             self.__parent.delChild(self)
         except ElementNotFound:
             return False
         else:
             parent.addChild(self)
-            self.__parent = parent  # TODO: There's probably a safer way to do this.
+            self.__parent = parent
 
     def __setChildren(self, children):
-
         """
-        Private accessor to overwrite list of children. Almost certainly a bad idea to use except to accomplish very
-        specific goals.
+        Private accessor to overwrite list of children. Almost
+        certainly a bad idea to use except to accomplish very specific goals.
 
         :param children: list of children to replace current list with.
         """
+
         self.__children = children
 
     def __insertChild(self, index, child):
@@ -154,6 +172,7 @@ class Element(object):
         :param index: Position to insert child into self.__children
         :param child: Child Element
         """
+
         self.__children.insert(index, child)
 
     def __delChild(self, index):
@@ -162,19 +181,23 @@ class Element(object):
         :param index: Index
         :raise: IndexError
         """
+
         try:
             self.__children.pop(index)
         except IndexError:
-            self.logger.critical("Index error in " + str(self) + ":delChild")
+            self.logger.critical('Index error in ' + str(self)
+                                 + ':delChild')
             raise IndexError
 
     def cycleSearch(self, new_parent):
-        """Ensure that new_parent is not contained in the descendant tree in self.children"""
+        """Ensure that new_parent is not contained in
+        the descendant tree in self.children"""
 
         return self.searchChildren(new_parent)
 
     def searchChildren(self, element):
         """Simple recursive check from membership."""
+
         for child in self.__children:
             if child == element or child.searchChildren(element):
                 return True
@@ -186,6 +209,7 @@ class Element(object):
         :param element: element to check
         :return: :rtype:
         """
+
         return isinstance(element, Element)
 
     def childCount(self):
@@ -193,6 +217,7 @@ class Element(object):
         Number of children in list, first-level.
         :return: :rtype:
         """
+
         return len(self.__children)
 
     def isRoot(self):
@@ -201,6 +226,7 @@ class Element(object):
 
         :return: :rtype:
         """
+
         return self.root
 
     def returnRoot(self):
@@ -209,10 +235,11 @@ class Element(object):
 
         :return: :rtype:
         """
+
         if self.isRoot():
             return self
         current_object = self.__parent
-        while not current_object.isRoot():  # TODO: Infinite loops should be impossible, but I want to verify that.
+        while not current_object.isRoot():
             current_object = current_object.getParent()
         return current_object
 
@@ -222,10 +249,11 @@ class Element(object):
         :param column:
         :param row:
         """
+
         self.column = column
         self.row = row
         for child in self.__children:
-            child.setPosition(column, row)#...
+            child.setPosition(column, row)  # ...
 
     def draw(self, *args, **kwargs):
         offset = 0
@@ -233,14 +261,13 @@ class Element(object):
             offset += x.getHeight() + 5
             x.draw(y=offset, *args, **kwargs)
 
-
-            #def searchChildren(self, *args, **kwargs):
-            #for x in self.getChildren():
+            # def searchChildren(self, *args, **kwargs):
+            # for x in self.getChildren():
             #    for y in args:
             #        if x.y:
             #            return x.y
             #    x.searchChildren()
-            #return False
+            # return False
 
     def getHeight(self):
         pass
@@ -255,31 +282,68 @@ class Element(object):
 
 
 class TextElement(Element):
-    def __init__(self, parent, render=True, text='', font_name='monospace', font_size=12):
+
+    def __init__(
+        self,
+        parent,
+        render=True,
+        text='',
+        font_name='monospace',
+        font_size=12,
+        ):
+        """
+        Initalization function.
+        :param parent: Parent element.
+        :type parent: Element
+        :param render: Rendering flag.
+        :type render: bool
+        :param text: The text displayed in the element
+        :type text: string
+        :param font_name: The font name
+        :type font_name: string
+        :param font_size: The font size
+        :type font_size: int
+        """
+
+        self.parent = parent
+        self.render = render
+        self.text = text
+        self.font_name = font_name
+        self.font_size = font_size
         super(TextElement, self).__init__(parent, render, False)
         self.__text = text
-        #self.logger.info('Set text in TextElement to: ' + self.__text)
+
+        # self.logger.info('Set text in TextElement to: ' + self.__text)
+
         self.font = Font(font_name, font_size)
-        self.label = pyglet.text.Label(' ',
-                                       font_name=self.font.name,
-                                       font_size=self.font.size,
-                                       x=0, y=0)
+        self.label = pyglet.text.Label(' ', font_name=self.font.name,
+                font_size=self.font.size, x=0, y=0)
         self.letter_width = self.label.content_width
         self.draw()
 
-    def draw(self, x=0, y=0, y_flip=True, y_height=None, y_offset=0):
-        #self.logger.info(y_height)
+    def draw(
+        self,
+        x=0,
+        y=0,
+        y_flip=True,
+        y_height=None,
+        y_offset=0,
+        ):
+
+        # self.logger.info(y_height)
+
         self.x = x
         self.y = y - y_offset
         if y_flip and isinstance(y_height, int):
             y = y_height - self.y
         else:
             y = self.y
-            #self.logger.info("X,Y,y_height",self.x,self.y,y_height,y_offset)
+
+            # self.logger.info("X,Y,y_height",self.x,self.y,y_height,y_offset)
+
         self.label = pyglet.text.Label(self.__text,
-                                       font_name=self.font.name,
-                                       font_size=self.font.size,
-                                       x=self.x, y=y)
+                font_name=self.font.name, font_size=self.font.size,
+                x=self.x, y=y)
         self.label.draw()
 
     def getX(self):
@@ -292,12 +356,15 @@ class TextElement(Element):
         return self.label.content_height
 
     def addText(self, letter, index=0):
-        self.__text = letter.join([self.__text[:index], self.__text[index:]])
+        self.__text = letter.join([self.__text[:index],
+                                  self.__text[index:]])
         results = self.template_manager.searchAll(self.__text)
         self.logger.info(self.__text)
         if len(results) == 1:
-            self.logger.info("one template found! " + self.template_manager.search(results[0]).compileTemplate())
-            self.__text = self.template_manager.search(results[0]).compileTemplate()
+            self.logger.info('one template found! '
+                             + self.template_manager.search(results[0]).compileTemplate())
+            self.__text = \
+                self.template_manager.search(results[0]).compileTemplate()
             return len(self.template_manager.search(results[0]).compileTemplate())
         else:
             self.logger.info(results)
@@ -307,9 +374,9 @@ class TextElement(Element):
         if index < 0:
             return False
         else:
-            self.__text = ''.join([self.__text[:index], self.__text[index + 1:]])
+            self.__text = ''.join([self.__text[:index],
+                                  self.__text[index + 1:]])
             return True
-
 
     def getWidth(self):
         return self.label.content_width
@@ -322,41 +389,87 @@ class TextElement(Element):
 
 
 class ButtonElement(Element):
-    def __init__(self, parent, height=30, width=30):
+
+    def __init__(
+        self,
+        parent,
+        height=30,
+        width=30,
+        ):
+
         super(ButtonElement, self).__init__(parent=parent)
         self.height = height
         self.width = width
 
-    def draw(self, y=100, x=100, y_offset=0, y_flip=True, y_height=None, *args, **kwargs):
+    def draw(
+        self,
+        y=100,
+        x=100,
+        y_offset=0,
+        y_flip=True,
+        y_height=None,
+        *args,
+        **kwargs
+        ):
+
         if y_flip and isinstance(y_height, int):
             y = y_height - y
         x1 = x
         y1 = y
         x2 = x + self.width
         y2 = y + 20
-        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', (x1, y1, x1, y2, x2, y2, x2, y1)))
+        pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', (
+            x1,
+            y1,
+            x1,
+            y2,
+            x2,
+            y2,
+            x2,
+            y1,
+            )))
 
     def getHeight(self):
         return self.height
 
 
 class Font(object):
+
     def __init__(self, name='monospace', size=12):
         self.name = name
         self.size = size
 
 
 class Rectangle(object):
-    def __init__(self, x1, y1, x2, y2):
-        self.rectangle = pyglet.graphics.draw(4, pyglet.gl.GL_QUADS, ('v2f', (x1, y1, x1, y2, x2, y2, x2, y1)))
+
+    def __init__(
+        self,
+        x1,
+        y1,
+        x2,
+        y2,
+        ):
+
+        self.rectangle = pyglet.graphics.draw(4, pyglet.gl.GL_QUADS,
+                ('v2f', (
+            x1,
+            y1,
+            x1,
+            y2,
+            x2,
+            y2,
+            x2,
+            y1,
+            )))
 
 
 class Template(object):
+
     def __init__(self, template_string, name=None):
         self.template_list = template_string.split()
         self.value_dict = dict()
-        self.re = re.compile("<<(.*)>>")
-        for idx, val in enumerate(self.template_list):
+        self.re = re.compile('<<(.*)>>')
+        for (idx, val) in enumerate(self.template_list):
             if self.re.findall(val):
                 self.template_list[idx] = self.re.findall(val)[0]
                 self.value_dict[self.re.findall(val)[0]] = idx
@@ -364,7 +477,6 @@ class Template(object):
             self.name = name
         else:
             self.name = self.template_list[0]
-
 
     def setValue(self, key, value):
         if key in self.value_dict:
@@ -385,12 +497,14 @@ class Template(object):
 
 
 class Value(object):
+
     def __init__(self, key, value=None):
         self.key = key
         self.value = value
 
 
 class TemplateManager(object):
+
     def __init__(self):
         self.templates = {}
 
@@ -407,9 +521,11 @@ class TemplateManager(object):
         return self.templates
 
     def search(self, term):
-        trie = marisa_trie.Trie([unicode(value) for value in self.templates.keys()])
+        trie = marisa_trie.Trie([unicode(value) for value in
+                                self.templates.keys()])
         return self.templates[str(trie.keys(unicode(term))[0])]
 
     def searchAll(self, term):
-        trie = marisa_trie.Trie([unicode(value) for value in self.templates.keys()])
+        trie = marisa_trie.Trie([unicode(value) for value in
+                                self.templates.keys()])
         return [str(value) for value in trie.keys(unicode(term))]

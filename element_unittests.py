@@ -1,20 +1,25 @@
-__author__ = 'ankhmorporkian'
-import unittest
-import random
+#!/usr/bin/python2
+# -*- coding: utf-8 -*-
 
-from element import *
+from element import Element, Template, TemplateManager
+from lemon_exceptions import RootNotElement, InvalidElement
+import random
+import unittest
+__author__ = 'ankhmorporkian'
 
 
 class SubElement(Element):
+
     pass
 
 
 class TestElement(unittest.TestCase):
+
     def setUp(self):
         self.root = Element(root=True)
 
     def test_add_element(self):
-        for x in range(10):
+        for _ in range(10):
             Element(self.root)
         self.assertEqual(len(self.root.getChildren()), 10)
 
@@ -28,7 +33,7 @@ class TestElement(unittest.TestCase):
 
     def test_add_sub_elements(self):
         for element in self.root.getChildren():
-            for x in range(random.randint(4, 9)):
+            for _ in range(random.randint(4, 9)):
                 SubElement(element)
 
     def test_find_element(self):
@@ -54,19 +59,25 @@ class TestElement(unittest.TestCase):
         self.assertFalse(b.searchChildren(a))
 
     def test_template_add(self):
-        template = Template('if <<a>> <<operator>> <<b>> then begin;\n<<stuff>>;\nend;')
+        template = \
+            Template('''if <<a>> <<operator>> <<b>> then begin;
+<<stuff>>;
+end;''')
         root = Element(root=True)
         self.assertEqual(root.getTemplate(), None)
         root.setTemplate(template)
-        self.assertEqual(root.getTemplate().compileTemplate(), template.compileTemplate())
+        self.assertEqual(root.getTemplate().compileTemplate(),
+                         template.compileTemplate())
 
 
 class TestTemplate(unittest.TestCase):
+
     def setUp(self):
         self.root = Element(root=True)
 
     def test_if_set(self):
-        template_string = "if <<first>> <<operator>> <<second>> then begin;"
+        template_string = \
+            'if <<first>> <<operator>> <<second>> then begin;'
         template = Template(template_string)
         template.setValue('first', '1')
         template.setValue('operator', '>')
@@ -74,23 +85,31 @@ class TestTemplate(unittest.TestCase):
         self.assertEqual(template.getValue('first'), '1')
         self.assertEqual(template.getValue('second'), '0')
         self.assertEqual(template.getValue('operator'), '>')
-        self.assertEqual(template.compileTemplate(), 'if 1 > 0 then begin;')
+        self.assertEqual(template.compileTemplate(),
+                         'if 1 > 0 then begin;')
 
     def test_templates(self):
-        a = Template("while <<condition>> do (newline) <<indented_body>>")
-        a.setValue('condition', Template("my banana is on fire"))
-        a.setValue('indented_body', Template("many indented codez"))
-        self.assertEqual(a.compileTemplate(), "while my banana is on fire do (newline) many indented codez")
+        a = \
+            Template('while <<condition>> do (newline) <<indented_body>>'
+                     )
+        a.setValue('condition', Template('my banana is on fire'))
+        a.setValue('indented_body', Template('many indented codez'))
+        self.assertEqual(a.compileTemplate(),
+                         'while my banana is on fire do (newline) many indented codez'
+                         )
 
     def test_template_name(self):
-        template_name = "test"
-        template_string = "test <<a>> <<b>>"
+        template_name = 'test'
+        template_string = 'test <<a>> <<b>>'
 
-        self.assertEqual(Template(template_string).name, Template('foobar', name=template_name).name)
-        self.assertNotEqual(Template(template_string).name, Template('foobar').name)
+        self.assertEqual(Template(template_string).name,
+                         Template('foobar', name=template_name).name)
+        self.assertNotEqual(Template(template_string).name,
+                            Template('foobar').name)
 
 
 class TestTemplateManager(unittest.TestCase):
+
     def setUp(self):
         self.tm = TemplateManager()
         self.template = Template('test123 <<a>> <<b>>')
@@ -100,10 +119,11 @@ class TestTemplateManager(unittest.TestCase):
 
     def test_add_template(self):
         self.assertEqual(self.tm.addTemplate(self.template), 1)
-        self.assertEqual(self.tm.addTemplate(self.template), 1)  # Make sure that only one instance  is added.
-        self.assertRaises(TypeError, self.tm.addTemplate, 'sup')  # Make sure you can only add a Template object.
+        self.assertEqual(self.tm.addTemplate(self.template), 1)
+        self.assertRaises(TypeError, self.tm.addTemplate, 'sup')
         self.assertRaises(KeyError, self.tm.getTemplate, 'sup')
-        self.assertEqual(self.tm.addTemplate(Template('boom', name='bam')), 2)
+        self.assertEqual(self.tm.addTemplate(Template('boom', name='bam'
+                         )), 2)
 
     def test_get_template(self):
         self.tm.addTemplate(self.template)
@@ -116,10 +136,13 @@ class TestTemplateManager(unittest.TestCase):
         self.tm.addTemplate(Template('for'))
         self.tm.addTemplate(Template('define'))
         self.assertEqual(self.tm.search('i').name, Template('if').name)
-        self.assertEqual(self.tm.search('wh').name, Template('when').name)
-        self.assertEqual(self.tm.search('whi').name, Template('while').name)
+        self.assertEqual(self.tm.search('wh').name, Template('when'
+                         ).name)
+        self.assertEqual(self.tm.search('whi').name, Template('while'
+                         ).name)
         self.assertEqual(self.tm.search('f').name, Template('for').name)
-        self.assertEqual(self.tm.search('d').name, Template('define').name)
+        self.assertEqual(self.tm.search('d').name, Template('define'
+                         ).name)
 
     def test_search_all(self):
         self.tm.addTemplate(Template('if'))
