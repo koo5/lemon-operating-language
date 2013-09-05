@@ -26,15 +26,17 @@ class test_document(Document):
 	def __init__(self):
 		Document.__init__(self)
 		self.text = ""
+		self.on_a_new_line = True
 	def __del__(self):
 		#print self.text.replace("\n","\\n\n")
 		print self.text
 	def append(self, text, attributes):
-		self.text += str(self.indentation)
-		self.text += text
-		if text == "\n":
+		if self.on_a_new_line:
+			self.on_a_new_line = False
 			self.append(self.indentation*"    ",attributes)
-	
+		self.on_a_new_line = (text == "\n")
+		self.text += text
+		
 
 
 
