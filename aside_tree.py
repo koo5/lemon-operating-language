@@ -37,6 +37,11 @@ class test_document(Document):
 
 
 
+class element(object):
+	def on_text(self, motion):
+		print self
+
+
 
 """
 
@@ -44,7 +49,7 @@ things that make up a template
 indenting is still broken, as it is done with a newline...and sometimes newline comes before a dedent
 """
 
-class piece(object):
+class piece(element):
 	pass
 
 class T(piece):
@@ -95,7 +100,7 @@ class template(object):
 """
 widgets
 """
-class widget(object):
+class widget(element):
 	pass
 
 #could we derive this from a label or something to save work?
@@ -107,13 +112,12 @@ class text_widget(widget):
 	def render(self, document):
 		document.append(self.inner_document.text, {"node":self})
 
-	def on_text(self, text):
-		print "plap"
-	
-		"""
+	"""
 	def on_text_motion(self, motion):
-		self.code.caret.on_text_motion(motion)
+#		self.code.caret.on_text_motion(motion)
+		print 
 
+		
 	def on_text_motion_select(self, motion):
 		self.code.caret.on_text_motion_select(motion)
 
@@ -121,10 +125,9 @@ class text_widget(widget):
 
 	def grab_caret(self):
 		document.active_caret = self.caret
-		"""			
+	"""
 
-
-class button_widget(object):
+class button_widget(widget):
 	def __init__(self, text="[🔳]"):
 		self.text = text
 	def on_click(self):
@@ -160,9 +163,8 @@ the AST stuff could be generated
 """
 
 
-class ast_node(object):
-	def on_text(self, text):
-		print "plop"
+class ast_node(element):
+	pass
 
 class text_node(ast_node):
 	def __init__(self, value):
@@ -324,9 +326,8 @@ root.render(test_document())
 
 
 <AnkhMorporkian_> it's probably a bad idea to have newline as its own class. it'd be better to maintain it in the document class, since you have to have that anyways when you're using it.
-
-
-
+<AnkhMorporkian> i understand why the nodes handle their own rendering, but I don't see why simple text characters should be.
+<sirdancealot_> i wanted to have it uniform, to avoid special handling of str inside the template render
 
 
 """	
