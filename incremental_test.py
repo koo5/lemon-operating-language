@@ -15,12 +15,13 @@ class CodeArea(ast.Document):
 		self.batch = batch
 		
 		self.document = pyglet.text.document.FormattedDocument("ABC")
-		self.document.set_style(0, len(self.document.text),dict(color=(0,0,0, 255)))
+		self.document.set_style(0, len(self.document.text),dict(color=(255,255,255,255)))
 						
 		self.layout = pyglet.text.layout.IncrementalTextLayout(
 					self.document, width, height, multiline=True, batch=batch)
 
-		self.caret = pyglet.text.caret.Caret(self.layout, self.batch, (255,255,255))
+		self.caret = pyglet.text.caret.Caret(self.layout, self.batch, (255,0,0))
+		self.active_caret = self.caret
 
 		self.layout.x = 0
 		self.layout.y = 0
@@ -43,11 +44,25 @@ class CodeArea(ast.Document):
 		self.document.insert_text(len(self.document.text),text, attributes)
 
 	def on_text(self, text):
-		#self.caret.on_text(text)
 		self.caret.get_style("node").on_text(text)
 		self.rerender()
 
-
+	def on_text_motion(self, motion):
+		self.caret.get_style("node").on_text_motion(motion)
+		self.rerender()
+	
+	def on_text_motion_select(self, motion):
+		self.caret.get_style("node").on_text_motion_select(motion)
+		self.rerender()
+	
+	def on_key_press(self, symbol, modifiers):
+		self.caret.get_style("node").on_key_press(text)
+		self.rerender()
+	
+	def on_click(self):
+		self.caret.get_style("node").on_click(text)
+		self.rerender()
+	
 
 class Window(pyglet.window.Window):
 
@@ -63,7 +78,7 @@ class Window(pyglet.window.Window):
 		self.code.resize(width, height)
 
 	def on_draw(self):
-		pyglet.gl.glClearColor(0, 1, 0, 1)
+		pyglet.gl.glClearColor(0, 0, 0, 1)
 		self.clear()
 		self.batch.draw()
 	"""
@@ -159,3 +174,7 @@ class Window(pyglet.window.Window):
 	"""
 window = Window(resizable=True)
 pyglet.app.run()
+
+
+
+

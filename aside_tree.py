@@ -4,7 +4,7 @@
 
 
 #lets ingraft this onto the element tree. get rid of the document parameters too?
-
+#and fix all the naming conventions and formating and super() calls ...
 
 
 
@@ -41,7 +41,7 @@ class test_document(Document):
 """
 
 things that make up a template
-
+indenting is still broken, as it is done with a newline...and sometimes newline comes before a dedent
 """
 
 class piece(object):
@@ -99,11 +99,30 @@ class widget(object):
 	pass
 
 #could we derive this from a label or something to save work?
+#embed an unformateddocument and do something to a caret
 class text_widget(widget):
 	def __init__(self, text):
-		self.text = text
+		self.inner_document = pyglet.UnformatedDocument(text)
+		self.caret = pyglet.text.caret.Caret(self.layout, self.batch, (255,255,255))
 	def render(self, document):
-		document.append(self.text, {"node":self})
+		document.append(self.inner_document.text, {"node":self})
+
+	def on_text(self, text):
+		print "plap"
+	
+		"""
+	def on_text_motion(self, motion):
+		self.code.caret.on_text_motion(motion)
+
+	def on_text_motion_select(self, motion):
+		self.code.caret.on_text_motion_select(motion)
+
+	def on_click(self):
+
+	def grab_caret(self):
+		document.active_caret = self.caret
+		"""			
+
 
 class button_widget(object):
 	def __init__(self, text="[🔳]"):
@@ -192,6 +211,9 @@ class number_node(ast_node):
 	def render(self, document):
 		document.append(str(self.value), {"node":self})
 
+
+#should this automatically indent? and show the button left of the first item...
+
 class statements_node(ast_node):
 	def __init__(self, items):
 		self.items = items
@@ -215,7 +237,7 @@ class statements_node(ast_node):
 
 
 
-"""hummmmm"""
+"""hummmmm, this is an odd one"""
 class variable_node(ast_node):
 	def __init__(self, name):
 		self.name = text_node(name)
@@ -297,3 +319,14 @@ root = root_node(statements_node([asignment_node(text_node("a"), number_node(1))
 root.render(test_document())
 
  
+
+"""
+
+
+<AnkhMorporkian_> it's probably a bad idea to have newline as its own class. it'd be better to maintain it in the document class, since you have to have that anyways when you're using it.
+
+
+
+
+
+"""	
