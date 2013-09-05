@@ -3,6 +3,16 @@
 
 
 
+#lets ingraft this onto the element tree. get rid of the document parameters too?
+
+
+
+
+
+
+"""
+subclass from Document and implement append.
+"""
 
 class Document(object):
 	def __init__(self):
@@ -96,10 +106,12 @@ class text_widget(widget):
 		document.append(self.text, {"node":self})
 
 class button_widget(object):
-	def on_click(self, text):
+	def __init__(self, text="[🔳]"):
+		self.text = text
+	def on_click(self):
 		parent.clicked(self)
 	def render(self, document):
-		document.append("[🔳]", {"node":self})
+		document.append(self.text, {"node":self})
 	
 class number_widget(widget):
 	def __init__(self, text):
@@ -184,10 +196,21 @@ class statements_node(ast_node):
 	def __init__(self, items):
 		self.items = items
 		assert isinstance(items, list)
+		self.expand_collapse_button = button_widget()
+		self.set_expanded()
 	def render(self, document):
-		for item in self.items:
-			item.render(document)
-			newline().render(document, self)
+		self.expand_collapse_button.render(document)
+		newline().render(document, self)
+		if not self.collapsed:
+			for item in self.items:
+				item.render(document)
+				newline().render(document, self)
+	def set_collapsed(self):
+		self.collapsed = True
+		self.expand_collapse_button.text = "+++"
+	def set_expanded(self):
+		self.collapsed = False
+		self.expand_collapse_button.text = "---"
 
 
 
