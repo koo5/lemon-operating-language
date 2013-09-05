@@ -42,7 +42,9 @@ class CodeArea(ast.Document):
 
 	def append(self, text, attributes):
 		self.document.insert_text(len(self.document.text),text, attributes)
-
+		if text == "\n":
+			self.append(self.indentation*"    ",attributes)
+	
 	def on_text(self, text):
 		self.caret.get_style("node").on_text(text)
 		self.rerender()
@@ -50,6 +52,7 @@ class CodeArea(ast.Document):
 	def on_text_motion(self, motion):
 		self.caret.get_style("node").on_text_motion(motion)
 		self.rerender()
+		return pyglet.event.EVENT_UNHANDLED
 	
 	def on_text_motion_select(self, motion):
 		self.caret.get_style("node").on_text_motion_select(motion)

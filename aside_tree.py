@@ -30,7 +30,10 @@ class test_document(Document):
 		#print self.text.replace("\n","\\n\n")
 		print self.text
 	def append(self, text, attributes):
+		self.text += str(self.indentation)
 		self.text += text
+		if text == "\n":
+			self.append(self.indentation*"    ",attributes)
 	
 
 
@@ -60,7 +63,7 @@ class T(piece):
 
 class newline(piece):
 	def render(self, document, node):
-		document.append("\n"+document.indentation*"    " , {"node":node})#
+		document.append("\n" , {"node":node})#
 
 class indent(piece):
 	def render(self, document, node):
@@ -179,8 +182,8 @@ class placeholder_node(ast_node):
 		document.append("<<"+">>", {"node":self})
 	#def replace(self, replacement):
 	#	parent.children[self.name] = replacement...
-	def on_text(self, text):
-		print "plap"
+	#def on_text(self, text):
+	#	print "plap"
 
 	
 
