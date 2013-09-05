@@ -97,16 +97,18 @@ the AST tree building blocks
 
 
 class ast_node(object):
-	pass
-
+	def on_text(self, text):
+		print "plop"
 
 class placeholder_node(ast_node):
 	def __init__(self):#type..
 		pass
 	def render(self, document):
-		document.append("<<"+">>", {"node":self, "bold": True})
+		document.append("<<"+">>", {"node":self})
 	#def replace(self, replacement):
 	#	parent.children[self.name] = replacement...
+	def on_text(self, text):
+		print "plap"
 
 	
 

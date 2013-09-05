@@ -7,22 +7,33 @@ import aside_tree as ast
 
 class CodeArea(ast.Document):
 
-	def __init__(self, width, height, batch):
+	def __init__(self, width, height, batch, parent):
 		ast.Document.__init__(self)
-
+		self.root = ast.root
+		
+		self.parent = parent
 		self.batch = batch
 		
 		self.document = pyglet.text.document.FormattedDocument("ABC")
-		self.document.set_style(0, len(self.document.text),
-								dict(color=(255, 255, 255, 255)))
-
+		self.document.set_style(0, len(self.document.text),dict(color=(0,0,0, 255)))
+						
 		self.layout = pyglet.text.layout.IncrementalTextLayout(
 					self.document, width, height, multiline=True, batch=batch)
-					
-		self.caret = pyglet.text.caret.Caret(self.layout)
+
+		self.caret = pyglet.text.caret.Caret(self.layout, self.batch, (255,255,255))
 
 		self.layout.x = 0
 		self.layout.y = 0
+
+		parent.push_handlers(self.on_text)		
+
+		self.rerender()
+
+	def rerender(self):
+		pos = self.caret.position
+		self.document.text = ""
+		self.root.render(self)
+		self.caret.position = pos#restore
 
 	def resize(self, width, height):
 		self.layout.width = width
@@ -30,6 +41,12 @@ class CodeArea(ast.Document):
 
 	def append(self, text, attributes):
 		self.document.insert_text(len(self.document.text),text, attributes)
+
+	def on_text(self, text):
+		#self.caret.on_text(text)
+		self.caret.get_style("node").on_text(text)
+		self.rerender()
+
 
 
 class Window(pyglet.window.Window):
@@ -39,17 +56,14 @@ class Window(pyglet.window.Window):
 				resizable=True)
 
 		self.batch = pyglet.graphics.Batch()
-		self.code = CodeArea(self.width, self.height, self.batch)
+		self.code = CodeArea(self.width, self.height, self.batch, self)
 		
-		ast.root.render(self.code)
-
-
 	def on_resize(self, width, height):
 		super(Window, self).on_resize(width, height)
 		self.code.resize(width, height)
 
 	def on_draw(self):
-#		pyglet.gl.glClearColor(0, 0, 0, 1)
+		pyglet.gl.glClearColor(0, 1, 0, 1)
 		self.clear()
 		self.batch.draw()
 	"""
@@ -106,9 +120,6 @@ class Window(pyglet.window.Window):
 				modifiers,
 				)
 	"""
-	def on_text(self, text):
-		self.code.caret.on_text(text)
-
 	def on_text_motion(self, motion):
 		self.code.caret.on_text_motion(motion)
 
