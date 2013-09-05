@@ -1,13 +1,8 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 
 
-
-"""
-
-a bit of a mess here but this could correspond to a subclass of a formatted document or work in a similar fashion
-
-"""
 
 class Document(object):
 	def __init__(self):
@@ -21,14 +16,12 @@ class test_document(Document):
 	def __init__(self):
 		Document.__init__(self)
 		self.text = ""
-	def _insert_text(self, pos, text, attributes):
-		self.text += text
 	def __del__(self):
 		#print self.text.replace("\n","\\n\n")
 		print self.text
 	def append(self, text, attributes):
-		self._insert_text(len(self.text),text, attributes)
-
+		self.text += text
+	
 
 
 
@@ -89,10 +82,50 @@ class template(object):
 
 			
 
+"""
+widgets
+"""
+class widget(object):
+	pass
+
+#could we derive this from a label or something to save work?
+class text_widget(widget):
+	def __init__(self, text):
+		self.text = text
+	def render(self, document):
+		document.append(self.text, {"node":self})
+
+class button_widget(object):
+	def on_click(self, text):
+		parent.clicked(self)
+	def render(self, document):
+		document.append("[🔳]", {"node":self})
+	
+class number_widget(widget):
+	def __init__(self, text):
+		self.text = text
+		self.plus_button = button_widget()
+		self.minus_button = button_widget()
+	def render(self, document):
+		self.minus_button.render(document)
+		document.append(self.text, {"node":self})
+		self.plus_button.render(document)
+		
+	
+
+
+
+
 
 
 """
 the AST tree building blocks
+
+in the end, it is always the node that is responsible for its render(), templated or not
+
+some division of the boilerplatish AST rote from the gui handling stuff would be good
+
+the AST stuff could be generated
 """
 
 
@@ -100,9 +133,15 @@ class ast_node(object):
 	def on_text(self, text):
 		print "plop"
 
+class text_node(ast_node):
+	def __init__(self, value):
+		self.value = value
+	def render(self, document):
+		document.append(self.value, {"node":self})
+
 class placeholder_node(ast_node):
 	def __init__(self):#type..
-		pass
+		self.text = text_node("placeholder")
 	def render(self, document):
 		document.append("<<"+">>", {"node":self})
 	#def replace(self, replacement):
@@ -126,17 +165,18 @@ class templated_node(ast_node):
 		self.template_index  += 1
 		if self.template_index == len(self.templates):
 			self.template_index = len(self.templates)-1
+	def on_keypress(self, key, modifiers):
+		if pyglet.MOD_CTRL in modifiers and key == pyglet.UP:
+			prev_template()
+		if pyglet.MOD_CTRL in modifiers and key == pyglet.DOWN:
+			next_template()
 
-
-class text_node(ast_node):
-	def __init__(self, value):
-		self.value = value
-	def render(self, document):
-		document.append(self.value, {"node":self})
 
 class number_node(ast_node):
 	def __init__(self, value):
 		self.value = value
+		self.minus_button = button_widget()
+		self.plus_button = button_widget()
 	def render(self, document):
 		document.append(str(self.value), {"node":self})
 
