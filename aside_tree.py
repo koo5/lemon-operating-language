@@ -127,25 +127,33 @@ class widget(element):
 #embed an unformateddocument and do something to a caret
 class text_widget(widget):
 	def __init__(self, text):
-		self.inner_document = pyglet.UnformatedDocument(text)
-		self.caret = pyglet.text.caret.Caret(self.layout, self.batch, (255,255,255))
-	def render(self, document):
-		document.append(self.inner_document.text, {"node":self})
+		self.text = text
 
-	"""
-	def on_text_motion(self, motion):
-#		self.code.caret.on_text_motion(motion)
-		print 
-
+	@property
+	def caret_position(self):
+		if caret.get_style["element"] != self:
+			raise Exception("caret isnt at me, dont ask me for position")
+		return caret.get_style["position"]
 		
-	def on_text_motion_select(self, motion):
-		self.code.caret.on_text_motion_select(motion)
-
-	def on_click(self):
-
-	def grab_caret(self):
-		document.active_caret = self.caret
-	"""
+	def render(self, document):
+		for position, letter in enumerate(self.text):
+			document.append(self.text, {"element":self, "position":position})
+	
+	def on_text(self, text):
+		pos = self.position
+		self._position += len(text)
+		self.text = self.text[:pos] + text + self.text[pos:]
+	
+	def on_text_motion(self, motion, select=False):
+		if motion == key.MOTION_BACKSPACE:
+			if self.position > 0:
+				self.position -= 1
+				self.text = self.text[:position-1]+self.text[position:]
+		if motion == key.MOTION_LEFT:
+			self.position = max(0, self.position - 1)
+		elif motion == key.MOTION_RIGHT:
+			self.position = min(len(self.text), self.position + 1)
+		
 
 class button_widget(widget):
 	def __init__(self, text="[🔳]"):
@@ -198,6 +206,7 @@ def SimpleTemplate(istring,default_values):
 	parts_list_raw = keyssearch.split(istring)
 	parts_list = filter(lambda x: (len(x) > 0), parts_list_raw)
 	keys = filter(lambda x: (len(x) > 0) and (x[0] == "%"), parts_list)
+	print keys, default_values
 	output_dict = dict(zip(keys,default_values))
 	
 	class MetaTemplate(Template):
@@ -212,17 +221,34 @@ def SimpleTemplate(istring,default_values):
 	return MetaTemplate
 
 templates = { #oh noes, default values should be widgets with texts, variable nodes and statemen blocks!
-'text' : SimpleTemplate("%(text)s", ('')),
+'literal' : SimpleTemplate("%(text)s", [text_widget('')]),
 'placeholder' : SimpleTemplate("<<%(text)s>>", ('')),
-'root' : SimpleTemplate("Program by %(author)s created on %(date)s, my whole code, indented:",('nobody', '1/1/2001')),
+'root' : SimpleTemplate("Program by %(author)s created on %(date)s, my whole code, indented:",
+(text_widget('nobody'), text_widget('1/1/2001'))),
 'while' : SimpleTemplate("while %(left_value)s %(operator)s %(right_value)s do:\n%(block)s",('a','==','b','\n')),
 'if' : SimpleTemplate("if %(left_value)s %(operator)s %(right_value)s do:\n%(block)s",('a','==','b','\n')),
-'assignment' : SimpleTemplate("%(left_value)s = %(right_value)s",('a','b')),
-'print' : SimpleTemplate("print %(statement)s",(''))
+'assignment' : SimpleTemplate("%(left_value)s = %(right_value)s",
+(placeholder_node(type=variable, example='a'),(placeholder_node(type=variable, example='b')))),
+'print' : SimpleTemplate("print %(expression)s",[placeholder(type=expression)])
 }
-
-
 """
+statements:
+	if
+	while
+	assignment
+	print
+	expressions:
+		binops
+		literals
+			text
+			number
+		function call
+	function declaration
+
+#we could have an optional default value of a placeholder
+
+
+
 the AST tree building blocks
 
 in the end, it is always the node that is responsible for its render(), templated or not
