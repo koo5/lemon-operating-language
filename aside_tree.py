@@ -7,15 +7,17 @@
 #and fix all the naming conventions and formating and super() calls ...
 
 
+import re
+import sys
+
+
+global document
 
 
 
 """
 subclass from Document and implement append.
 """
-document = test_document()
-global document
-
 class Document(object):
 	def __init__(self):
 		self.indentation = 0
@@ -31,9 +33,10 @@ class test_document(Document):
 		self.on_a_new_line = True
 		self.indent_length = 4
 
-	def __del__(self):
+	#this no longer works with one global test_document
+	#def __del__(self):
 		#print self.text.replace("\n","\\n\n")
-		print self.text
+		#print self.text
 
 	def append(self, text, attributes):
 		if self.on_a_new_line:
@@ -41,10 +44,14 @@ class test_document(Document):
 			self.append(self.return_indent(),attributes)
 		self.on_a_new_line = (text == "\n")
 		self.text += text
-
+		#this should
+		sys.stdout.write(text)
+	
 	def return_indent(self):
 		return " "*self.indent_length
 		
+document = test_document()
+
 
 
 
@@ -170,14 +177,13 @@ class Template(object):
 		if data:
 			self.setData(data)
 
-		document.append(self.string%self.dictionary)
-	"""
-		for item in self.chunks:
-			if chunk is text: document.append(chunk, {"element":data?}
-			if chunk is a key: document.data[key].render()...
+#		document.append(self.string%self.dictionary)
+	
+		for item in self.parts:
+			print item
+			if  item[0] == "%": self.dictionary[item].render()
+			else: document.append(item, {"element":self})
 
-	"""
-		
 	def setData(self,data):
 		for key,value in data:
 			try:
@@ -188,28 +194,25 @@ class Template(object):
 
 
 def SimpleTemplate(istring,default_values):
-        keyssearch = re.compile(r'.*?\%\((.*?)\)s')
-#we need to parse out the inbetween texts too
-        keys = keyssearch.findall(istring)
-        output_dict = dict(zip(keys,default_values))
-	not_keys = re.compile(r'(?!\(.*?\))')
-	outlist = []
-	tstring = istring
-	for key in keys:
-		outlist+=tstring.split(' %(%s) ')[0]
-		outlist+=key
-
-        class MetaTemplate(Template):
-                string = istring
-                dictionary = output_dict
+	keyssearch = re.compile(r"(%\([^)]*\)s)")
+	parts_list_raw = keyssearch.split(istring)
+	parts_list = filter(lambda x: (len(x) > 0), parts_list_raw)
+	keys = filter(lambda x: (len(x) > 0) and (x[0] == "%"), parts_list)
+	output_dict = dict(zip(keys,default_values))
+	
+	class MetaTemplate(Template):
+		string = istring
+		parts = parts_list
+		dictionary = output_dict
 		key_list = keys
-                def __init__(self, data=None):
-                        self.data = data or self.string
-                        super(MetaTemplate,self).__init__(self.data, self.dictionary)
-        return MetaTemplate
+		def __init__(self, data=None):
+			self.data = data or self.string
+			super(MetaTemplate,self).__init__(self.data, self.dictionary)
+	
+	return MetaTemplate
 
-templates = {
-'text' : SimpleTemplate("%(text)s", ('')) # Oh no they aren't global!
+templates = { #oh noes, default values should be widgets with texts, variable nodes and statemen blocks!
+'text' : SimpleTemplate("%(text)s", ('')),
 'placeholder' : SimpleTemplate("<<%(text)s>>", ('')),
 'root' : SimpleTemplate("Program by %(author)s created on %(date)s, my whole code, indented:",('nobody', '1/1/2001')),
 'while' : SimpleTemplate("while %(left_value)s %(operator)s %(right_value)s do:\n%(block)s",('a','==','b','\n')),
@@ -242,7 +245,7 @@ class ast_node(element):
 	def keys(self):
 		return self.template.keys	
 
-	def setKey(self, key, value)
+	def setKey(self, key, value):
 		try:
 			self.data[key] = value
 		except IndexError:
