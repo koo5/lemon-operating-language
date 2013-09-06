@@ -161,8 +161,62 @@ class number_widget(widget):
 	
 
 
+class Template(object):
+	def __init__(self, string, dictionary={}):
+		self.string = string
+		self.dictionary = dictionary
+
+	def render(self, data=None):
+		if data:
+			self.setData(data)
+
+		document.append(self.string%self.dictionary)
+	"""
+		for item in self.chunks:
+			if chunk is text: document.append(chunk, {"element":data?}
+			if chunk is a key: document.data[key].render()...
+
+	"""
+		
+	def setData(self,data):
+		for key,value in data:
+			try:
+				self.dictionary[key] = value
+			except IndexError:
+				print "Couldn't assign %s:%s to Template!" % (idx,element)
 
 
+
+def SimpleTemplate(istring,default_values):
+        keyssearch = re.compile(r'.*?\%\((.*?)\)s')
+#we need to parse out the inbetween texts too
+        keys = keyssearch.findall(istring)
+        output_dict = dict(zip(keys,default_values))
+	not_keys = re.compile(r'(?!\(.*?\))')
+	outlist = []
+	tstring = istring
+	for key in keys:
+		outlist+=tstring.split(' %(%s) ')[0]
+		outlist+=key
+
+        class MetaTemplate(Template):
+                string = istring
+                dictionary = output_dict
+		key_list = keys
+                def __init__(self, data=None):
+                        self.data = data or self.string
+                        super(MetaTemplate,self).__init__(self.data, self.dictionary)
+        return MetaTemplate
+
+templates = {
+'text' : SimpleTemplate("%(text)s", ('')) # Oh no they aren't global!
+'placeholder' : SimpleTemplate("<<%(text)s>>", ('')),
+'root' : SimpleTemplate("Program by %(author)s created on %(date)s, my whole code, indented:",('nobody', '1/1/2001')),
+'while' : SimpleTemplate("while %(left_value)s %(operator)s %(right_value)s do:\n%(block)s",('a','==','b','\n')),
+'if' : SimpleTemplate("if %(left_value)s %(operator)s %(right_value)s do:\n%(block)s",('a','==','b','\n')),
+'assignment' : SimpleTemplate("%(left_value)s = %(right_value)s",('a','b')),
+'print' : SimpleTemplate("print %(statement)s",(''))
+}
 
 
 """
@@ -177,24 +231,26 @@ the AST stuff could be generated
 
 
 class ast_node(element):
-	def __init__(self,data=None,templates=None,template_index=0):
+	def __init__(self,data,template):
 		self.data = data
-		self.templates = templates
-		self.template_index = template_index
-		self.template = property (lambda self: self.templates[self.template_index])
+		self.template = template(data)
 
 	def render(self,document):
 		self.template.render()
 
-	def prev_template(self):
-		self.template_index  -= 1
-		if self.template_index < 0:
-			self.template_index = 0
+	@property
+	def keys(self):
+		return self.template.keys	
 
-	def next_template(self):
-		self.template_index  += 1
-		if self.template_index == len(self.templates):
-			self.template_index = len(self.templates)-1
+	def setKey(self, key, value)
+		try:
+			self.data[key] = value
+		except IndexError:
+			print "Could not set data key %s to %s" % (key,value)
+
+	def setTemplate(self, template, data=None):
+		self.template = template(data)
+		self.data = data
 
 #	def __iadd__(self,value):  #Override later when the templating is cleaned up.
 #		self.template_index += value
@@ -203,28 +259,18 @@ class ast_node(element):
 
 class text_node(ast_node):
 	def __init__(self, data):
-		super(text_node,self).__init__(data=data) # Add template later
-	
-	def render(self, document):
-		document.append(self.value, {"node":self})
+		super(text_node,self).__init__(data,templates['text']) # Add template later
 
 class placeholder_node(text_node):
 	def __init__(self):#type..
-		super(placeholder_node,self).__init__(data="placeholder")
-
-	def render(self, document):
-		document.append("<<"+">>", {"node":self})
-	#def replace(self, replacement):
-	#	parent.children[self.name] = replacement...
-	#def on_text(self, text):
-	#	print "plap"
-
+		super(placeholder_node,self).__init__(data,templates['placeholder'])
 
 class number_node(ast_node):
 	def __init__(self, data):
 		super(number_node,self).__init__(data=data)
 		self.minus_button = button_widget() #Should move these to the template later
 		self.plus_button = button_widget()
+
 	def render(self, document):
 		document.append(str(self.data), {"node":self})
 
@@ -233,9 +279,7 @@ class number_node(ast_node):
 
 class statements_node(ast_node):
 	def __init__(self, items):
-		if not isinstance(list, items):
-			raise TypeError
-		super(statements_node,self).__init(data=items
+		super(statements_node,self).__init__(data=items)
 		self.expand_collapse_button = button_widget()
 		self.set_expanded()
 
@@ -275,141 +319,31 @@ now onto real programming
 
 
 class root_node(ast_node):
-	def __init__(self,statements, author="banana", date_created="1.1.1.1111"):
-		super(root_node,self).__init__(self,data=(statements,author,date_created))
-		self.templates = [template([T("program by "),child("author"), T(" created on "), child("date_created"), indent(), newline(), child("statements"), dedent(), T("end.")])
-		if not isinstance(statement, statements_node):
-			raise TypeError
-		self.statement = statement
-		self.author = text_node(author)
-		self.date_created = text_node(date_created)
-
+	def __init__(self,data):
+		super(root_node,self).__init__(data,templates['root'])
+		
 class while_node(ast_node):
-	def __init__(self,condition,body):
-		super(while_node,self).__init__(self, data=(condition,body))
-		self.templates = [template([T("while "), child("condition"), T(" do:"),indent(), newline(),child("body"),dedent()]),
-		template([T("repeat if"), child("condition"), T("is true:"),child("body"),T("go back up..")])]
-		self.condition = condition
-		self.body = body
+	def __init__(self,data):
+		super(while_node,self).__init__(data,templates['while'])
 
-class asignment_node(templated_node):
-	def __init__(self, left, right):
-		templated_node.__init__(self)
-		self.left=left
-		self.right=right
-		self.templates=[template([child("left"), T(" = "), child("right")]),
-									template([T("set "), child("left"), T(" to "), child("right")]),
-									template([T("have "), child("left"), T(" be "), child("right")])]
+class assignment_node(ast_node):
+	def __init__(self, data):
+		super(assignment_node,self).__init__(data,templates['assignment'])
 		
-class is_less_than_node(templated_node):
-	def __init__(self, left, right):
-		templated_node.__init__(self)
-		self.left=left
-		self.right=right
-		self.templates=[template([child("left"), T(" < "), child("right")])]
-		
-
-class print_node(templated_node):
-	def __init__(self,value):
-		templated_node.__init__(self)
-	
-		self.templates = [template([T("print "), child("value")]),
-									template([T("say"), child("value")])]
-		self.value = value
-
-class node(object):
-	def __init__(self,type_of_node,*args,**kwargs):
-		nodes = {
-			"assignment": asignment_node,
-			"print": print_node,
-			#...
-			}
-		if type_of_node in nodes:
-			return nodes[type_of_node](*args,**kwargs)
-
-class Template(object):
-	def __init__(self, string, dictionary={}):
-		self.string = string
-		self.dictionary = dictionary
-
-	def render(self, data=None):
-		if data:
-			self.setData(data)
-		document.append(self.string%self.dictionary)
-		
-	def setData(self,data):
-		for key,value in data:
-			try:
-				self.dictionary[key] = value
-			except IndexError:
-				print "Couldn't assign %s:%s to Template!" % (idx,element)
-
-def SimpleTemplate(string,default_values):
-	keyssearch = re.compile(r'.*?\%(\(.*\))s')
-	keys = keyssearch.findall(istring)
-	output_dict = dict(zip(keys,default_values))
-	class MetaTemplate(Template):
-		string = istring
-		dictionary = output_dict
-		def __init__(self, data=None):
-			self.data = data or string
-			super(MetaTemplate,self).__init__(string, self.data) 		
-	return MetaTemplate
-		
-		
-class text_template(Template):
-	def __init__(self, data=None): 
-		self.data = data or {"text": ''}
-		super(text_template,self).__init__("%(text)s", self.data)
-
-#	def render(self): should render fine with the basic one
-
-#this guy should maybe display the placeholder string in gray under(around) the user-typed text, like in the mockup
-class placeholder_template(Template):
-	def __init__(self,data=None):
-		self.data = data or {"text:" text}
-		super(placeholder_template,self).__init__("<<%(text)s>>", self.data)
-	
-
-class number_template(Template):
-	pass #Figure out the button situation later.
-
-class root_template(Template):
-	def __init__(self,data=None):
-		self.data = data or  {"author":'', 'date':"1/1/2001"}
-		super(root_template,self).__init__("Program by %(author)s created on %(date)s, my whole code, indented:",self.data)
-		
-class while_template(Template):
-	def __init__(self,data=None):
-		self.data = data or {'left_value': 'a', 'operator': '==', 'right_value': 'b', 'block': '\n'}
-		super(while_template, self).__init("while %(left_value)s %(operator)s %(right_value)s do:\n%(block)s",self.data)
-
-class if_template(Template):
-	def __init__(self,data=None):
-		self.data = data or {'left_value': 'a', 'operator': '==', 'right_value': 'b', 'block': '\n'}
-		super(_template,self).__init("if %(left_value)s %(operator)s %(right_value)s do:\n%(block)s",self.data)
-
-
-class _template(Template):
-	def __init__(self,data=None):
-		self.data = data or {}
-		super(_template,self).__init("",self.data)
-
-
-class _template(Template):
-	def __init__(self,data=None):
-		self.data = data or {}
-		super(_template,self).__init("",self.data)
-
-
-class _template(Template):
-	def __init__(self,data=None):
-		self.data = data or {}
-		super(_template,self).__init("",self.data)
+class print_node(ast_node):
+	def __init__(self,data):
+		super(print_node,self).__init__(data,templates['print'])
 
 
 
 
+
+
+
+
+
+"""
+x = text_template().render()
 test = templated_node()
 test.templates = [template([T("hello")])]
 test.render(test_document())
@@ -421,10 +355,8 @@ root = root_node(statements_node([asignment_node(text_node("a"), number_node(1))
 									while_node(is_less_than_node(variable_node("a"), variable_node("b")),
 										statements_node([print_node(variable_node("a")), placeholder_node()])), placeholder_node()]))
 
-
-
 root.render(test_document())
-
+"""
  
 
 """
