@@ -6,8 +6,8 @@
 #lets ingraft this onto the element tree
 
 
-
-
+import sys#:p
+import pyglet
 
 
 global document
@@ -21,17 +21,21 @@ class Document(object):
 		self.indentation = 0
 		self.on_a_new_line = True
 		self.indent_length = 4
+		
 	def indent(self):
 		self.indentation += 1
 	def dedent(self):
 		self.indentation -= 1
+		
 	def append(self, text, attributes):
 		if self.on_a_new_line:
 			self.on_a_new_line = False
-			self._append(self.return_indent(), attributes)
-			self.on_a_new_line = (text == "\n")
+			self._append(self.indent_spaces(), attributes)
+		self.on_a_new_line = (text == "\n")
+		self._append(text, attributes)
+			
 	def indent_spaces(self):
-		return " "*self.indent_length
+		return " " * self.indent_length * self.indentation
 
 
 
@@ -52,6 +56,9 @@ class Element(object):
 	def on_text_motion(self, motion, select=False):
 		print self, motion, select
 
+	def on_key_press(self, symbol, modifiers):
+		print pyglet.window.key.modifiers_string(modifiers), pyglet.window.key.symbol_string(symbol)
+		
 
 
 
@@ -83,7 +90,6 @@ class child(piece):
 	def __init__(self, name):
 		self.name = name
 	def render(self, node):
-		print node.__dict__[self.name]
 		node.__dict__[self.name].render()
 	
 
@@ -129,7 +135,7 @@ class TextWidget(Widget):
 		
 	def render(self):
 		for position, letter in enumerate(self.text):
-			document.append(self.text, {"element":self})
+			document.append(self.text[position], {"element":self})
 #			, "position":self.caret_position})
 	
 	def on_text(self, text):
@@ -223,12 +229,13 @@ class TemplatedNode(AstNode):
 		self.template_index  += 1
 		if self.template_index == len(self.templates):
 			self.template_index = len(self.templates)-1
-	def on_keypress(self, key, modifiers):
-		if pyglet.MOD_CTRL in modifiers and key == pyglet.UP:
-			prev_template()
-		if pyglet.MOD_CTRL in modifiers and key == pyglet.DOWN:
-			next_template()
-
+	def on_key_press(self, key, modifiers):
+		if (pyglet.window.key.MOD_CTRL & modifiers) and (key == pyglet.window.key.UP):
+			self.prev_template()
+			print "prev"
+		if (pyglet.window.key.MOD_CTRL & modifiers) and (key == pyglet.window.key.DOWN):
+			self.next_template()
+			print "next"
 
 
 
@@ -254,7 +261,6 @@ class StatementsNode(AstNode):
 	def render(self):
 		document.dedent()
 		self.expand_collapse_button.render()
-		document.append(document.indent_spaces()[len(self.expand_collapse_button.text)], {"element":self})
 		document.indent()
 		if self.expanded:
 			for item in self.items:
@@ -298,7 +304,8 @@ class RootNode(TemplatedNode):
 		super(RootNode, self).__init__()
 		assert isinstance(statements, StatementsNode)
 
-		self.templates = [template([t("program by "),child("author"), t(" created on "), child("date_created"), newline(), indent(), child("statements"), dedent(), t("end.")])]
+		self.templates = [template([t("program by "),child("author"), t(" created on "), child("date_created"), newline(), indent(), child("statements"), dedent(), t("end.")]),
+						template([t("lemon operating language running on python"), t(sys.version.replace("\n", "")), t(" READY."), newline(),indent(), child("statements"), dedent()])]
 		self.statements = statements
 		self.author = TextWidget(author)
 		self.date_created = TextWidget(date_created)
