@@ -29,7 +29,7 @@ class CodeArea(ast.Document):
 		self.layout.x = 2
 		self.layout.y = 2
 
-		parent.push_handlers(self.on_text)		
+		parent.push_handlers(self.on_text, self.on_key_press)
 
 		self.rerender()
 
@@ -43,10 +43,8 @@ class CodeArea(ast.Document):
 		self.layout.width = width
 		self.layout.height = height
 
-	def append(self, text, attributes):
+	def _append(self, text, attributes):
 		self.document.insert_text(len(self.document.text),text, attributes)
-		if text == "\n":
-			self.append(self.indentation*"    ",attributes)
 	
 	def on(self):
 		return self.caret.get_style("element")
@@ -65,7 +63,7 @@ class CodeArea(ast.Document):
 		self.rerender()
 	
 	def on_key_press(self, symbol, modifiers):
-		self.on().on_key_press(text)
+		self.on().on_key_press(symbol, modifiers)
 		self.rerender()
 	
 	def on_click(self):
