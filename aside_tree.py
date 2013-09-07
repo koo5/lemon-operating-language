@@ -1,14 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+pyglet.text.decode_attributed(
++
+proper templating
+
+"""
 
 
+#lets ingraft this onto the element tree
+#to have parents of objects accessible
 
-#lets ingraft this onto the element tree. get rid of the document parameters too?
-#and fix all the naming conventions and formating and super() calls ...
 
 
 import re
 import sys
+
 
 
 global document
@@ -16,7 +23,7 @@ global document
 
 
 """
-subclass from Document and implement append.
+subclass from Document, implement append and set aside_tree.document to it
 """
 class Document(object):
 	def __init__(self):
@@ -26,106 +33,31 @@ class Document(object):
 	def dedent(self):
 		self.indentation -= 1
 
-class test_document(Document):
-	def __init__(self):
-		Document.__init__(self)
-		self.text = ""
-		self.on_a_new_line = True
-		self.indent_length = 4
-
-	#this no longer works with one global test_document
-	#def __del__(self):
-		#print self.text.replace("\n","\\n\n")
-		#print self.text
-
-	def append(self, text, attributes):
-		if self.on_a_new_line:
-			self.on_a_new_line = False
-			self.append(self.return_indent(),attributes)
-		self.on_a_new_line = (text == "\n")
-		self.text += text
-		#this should
-		sys.stdout.write(text)
-	
-	def return_indent(self):
-		return " "*self.indent_length
-		
-document = test_document()
 
 
 
 
 
 
-class element(object):
+
+class Element(object):
 	def on_text(self, motion):
-		print self
-
-
-
-"""
-
-things that make up a template
-indenting is still broken, as it is done with a newline...and sometimes newline comes before a dedent
-"""
-
-class piece(element):
-	pass
-
-class T(piece):
-	def __init__(self, text):
-		self.text = text
-	def render(self, document, node):
-		document.append(self.text, {"node":node})
-
-class newline(piece):
-	def render(self, document, node):
-		document.append("\n" , {"node":node})#
-
-class indent(piece):
-	def render(self, document, node):
-		document.indent()
-
-class dedent(piece):
-	def render(self, document, node):
-		document.dedent()
-
-class child(piece):
-	def __init__(self, name):
-		self.name = name
-	def render(self, document, node):
-		node.__dict__[self.name].render(document)
+		print self, motion
 	
+	def on_text_motion(self, motion, select=False):
+		print self, motion, select
 
 
 
 
-
-
-
-
-class template(object):
-	def __init__(self, items):
-		self.items = items
-	def render(self, document, node):
-		assert isinstance(document, Document)
-		for item in self.items:
-			assert(isinstance(item, piece))
-			item.render(document, node)
-
-
-
-			
 
 """
 widgets
 """
-class widget(element):
+class Widget(Element):
 	pass
 
-#could we derive this from a label or something to save work?
-#embed an unformateddocument and do something to a caret
-class text_widget(widget):
+class Text_widget(Widget):
 	def __init__(self, text):
 		self.text = text
 
@@ -155,30 +87,43 @@ class text_widget(widget):
 			self.position = min(len(self.text), self.position + 1)
 		
 
-class button_widget(widget):
+class ButtonWidget(Widget):
 	def __init__(self, text="[🔳]"):
 		self.text = text
 	def on_click(self):
 		parent.clicked(self)
-	def render(self, document):
-		document.append(self.text, {"node":self})
+	def render(self):
+		document.append(self.text, {"element":self})
 	
-class number_widget(widget):
+class NumberWidget(Widget):
 	def __init__(self, text):
 		self.text = text
-		self.plus_button = button_widget()
-		self.minus_button = button_widget()
-	def render(self, document):
-		self.minus_button.render(document)
-		document.append(self.text, {"node":self})
-		self.plus_button.render(document)
+		self.plus_button = ButtonWidget()
+		self.minus_button = ButtonWidget()
+	def render(self):
+		self.minus_button.render()
+		document.append(self.text, {"element":self})
+		self.plus_button.render()
 		
+
+
+
+
+
+
+class NodeView(Element):
+	pass
+
+
+
+
+
 	
 
 
-class Template(object):
-	def __init__(self, string, dictionary={}):
-		self.string = string
+class Template(NodeView):
+	def __init__(self, source_string, dictionary={}):
+		self.source_string = source_string
 		self.dictionary = dictionary
 
 	def render(self, data=None):
@@ -201,7 +146,7 @@ class Template(object):
 
 
 
-def SimpleTemplate(istring,default_values):
+def template_class(istring,default_values):
 	keyssearch = re.compile(r"(%\([^)]*\)s)")
 	parts_list_raw = keyssearch.split(istring)
 	parts_list = filter(lambda x: (len(x) > 0), parts_list_raw)
@@ -220,8 +165,8 @@ def SimpleTemplate(istring,default_values):
 	
 	return MetaTemplate
 
-templates = { #oh noes, default values should be widgets with texts, variable nodes and statemen blocks!
-'literal' : SimpleTemplate("%(text)s", [text_widget('')]),
+"""
+LiteralTemplate = SimpleTemplateClass("%(text)s", [text_widget('')]),
 'placeholder' : SimpleTemplate("<<%(text)s>>", ('')),
 'root' : SimpleTemplate("Program by %(author)s created on %(date)s, my whole code, indented:",
 (text_widget('nobody'), text_widget('1/1/2001'))),
@@ -231,6 +176,8 @@ templates = { #oh noes, default values should be widgets with texts, variable no
 (placeholder_node(type=variable, example='a'),(placeholder_node(type=variable, example='b')))),
 'print' : SimpleTemplate("print %(expression)s",[placeholder(type=expression)])
 }
+"""
+
 """
 statements:
 	if
