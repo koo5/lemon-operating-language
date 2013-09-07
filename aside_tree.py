@@ -8,6 +8,7 @@
 
 import sys#:p
 import pyglet
+import tinytree
 
 
 global document
@@ -49,7 +50,10 @@ class Document(object):
 
 
 
-class Element(object):
+class Element(tinytree.Tree):
+	def __init__(self):
+		tinytree.Tree.__init__(self)
+
 	def on_text(self, motion):
 		print self, motion
 	
@@ -59,7 +63,8 @@ class Element(object):
 	def on_key_press(self, symbol, modifiers):
 		print pyglet.window.key.modifiers_string(modifiers), pyglet.window.key.symbol_string(symbol)
 		
-
+	def on_mouse_press(self, x, y, button, modifiers):
+		print x,y,button,modifiers
 
 
 
@@ -120,6 +125,7 @@ class Widget(Element):
 
 class TextWidget(Widget):
 	def __init__(self, text):
+		super(TextWidget, self).__init__()
 		self.text = text
 
 	@property
@@ -131,7 +137,6 @@ class TextWidget(Widget):
 	@caret_position.setter
 	def set_caret_position(self, value):
 		caret.position = caret.position - value
-	
 		
 	def render(self):
 		for position, letter in enumerate(self.text):
@@ -142,7 +147,7 @@ class TextWidget(Widget):
 		pos = self.caret_position
 		self.caret_position += len(text)
 		self.text = self.text[:pos] + text + self.text[pos:]
-		parent.on_edit(self)
+		self.parent.on_edit(self)
 	
 	def on_text_motion(self, motion, select=False):
 		if motion == key.MOTION_BACKSPACE:
@@ -163,14 +168,17 @@ class TextWidget(Widget):
 
 class ButtonWidget(Widget):
 	def __init__(self, text="[🔳]"):
+		super(ButtonWidget, self).__init__()
 		self.text = text
-	def on_click(self):
-		parent.clicked(self)
+	def on_mouse_press(self, x, y, button, modifiers):
+		print "button clicked"
+		self.parent.clicked(self)
 	def render(self):
 		document.append(self.text, {"element":self})
 	
 class NumberWidget(Widget):
 	def __init__(self, text):
+		super(NumberWidget, self).__init__()
 		self.text = text
 		self.plus_button = ButtonWidget()
 		self.minus_button = ButtonWidget()
@@ -188,16 +196,20 @@ class NumberWidget(Widget):
 
 
 class AstNode(Element):
-	pass
+	def __init__(self):
+		super(AstNode, self).__init__()
+
 
 class TextNode(AstNode):
 	def __init__(self, value):
+		super(TextNode, self).__init__()
 		self.widget = TextWidget(value)
 	def render(self):
 		self.widget.render()
 
 class PlaceholderNode(AstNode):
 	def __init__(self, name="placeholder", type=None, default=None, example=None):
+		super(PlaceholderNode, self).__init__()
 		d = (" (default:"+default+")") if default else ""
 		e = (" (for example:"+example+")") if example else ""
 		self.widget = TextWidget("<<"+name+d+e+">>")
@@ -217,6 +229,7 @@ class PlaceholderNode(AstNode):
 
 class TemplatedNode(AstNode):
 	def __init__(self):
+		super(TemplatedNode, self).__init__()
 		self.template_index = 0
 	template = property (lambda self: self.templates[self.template_index])
 	def render(self):
@@ -242,6 +255,7 @@ class TemplatedNode(AstNode):
 
 class NumberNode(AstNode):
 	def __init__(self, value):
+		super(NumberNode, self).__init__()
 		self.value = value
 		self.minus_button = ButtonWidget()
 		self.plus_button = ButtonWidget()
@@ -252,7 +266,8 @@ class NumberNode(AstNode):
 
 class StatementsNode(AstNode):
 	def __init__(self, items):
-		self.items = items
+		super(StatementsNode, self).__init__()
+		self.addChildrenFromList(items)
 		if not isinstance(items, list):
 			raise Exception("parameter to statements_node constructor is not a list")
 		self.expand_collapse_button = ButtonWidget()
@@ -263,7 +278,7 @@ class StatementsNode(AstNode):
 		self.expand_collapse_button.render()
 		document.indent()
 		if self.expanded:
-			for item in self.items:
+			for item in self.children:
 				item.render()
 				newline().render(self)
 	def toggle_expanded(self):
@@ -273,7 +288,8 @@ class StatementsNode(AstNode):
 		else:
 			self.expand_collapse_button.text = "---"
 	
-	def clicked(self, item):
+	def on_mouse_press(self, x, y, button, modifiers):
+		print banana
 		if item == self.expand_collapse_button:
 			self.toggle_expanded()
 
@@ -283,6 +299,7 @@ class StatementsNode(AstNode):
 
 class VariableReadNode(AstNode):
 	def __init__(self, name):
+		super(VariableReadNode, self).__init__()
 		self.name = TextWidget(name)
 	def render(self):
 		self.name.render()
@@ -328,6 +345,7 @@ class AsignmentNode(TemplatedNode):
 				template([t("have "), child("left"), t(" be "), child("right")])]
 		self.left=left
 		self.right=right
+		self.addChildrenFromList([left,right])
 		
 class IsLessThanNode(TemplatedNode):
 	def __init__(self, left, right):
@@ -346,6 +364,19 @@ class PrintNode(TemplatedNode):
 				template([t("say"), child("value")])]
 		self.value = value
 
+"""
+#set backlight brightness to %{number}%
+self.templates = target.call_templates?
+class CallNode(TemplatedNode):
+	def __init__(self, target=):
+		super(CallNode,self).__init__()
+		self.target = target
+		self.arguments = arguments
+	def render(self):
+		self.target
+"""		
+		
+		
 
 
 root = RootNode(StatementsNode([AsignmentNode(TextNode("a"), NumberNode(1)),
@@ -366,6 +397,11 @@ root = RootNode(StatementsNode([AsignmentNode(TextNode("a"), NumberNode(1)),
 <AnkhMorporkian_> it's probably a bad idea to have newline as its own class. it'd be better to maintain it in the document class, since you have to have that anyways when you're using it.
 <AnkhMorporkian> i understand why the nodes handle their own rendering, but I don't see why simple text characters should be.
 <sirdancealot_> i wanted to have it uniform, to avoid special handling of str inside the template render
+
+
+
+
+
 
 
 """	

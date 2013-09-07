@@ -29,7 +29,7 @@ class CodeArea(ast.Document):
 		self.layout.x = 2
 		self.layout.y = 2
 
-		parent.push_handlers(self.on_text, self.on_key_press)
+		parent.push_handlers(self.on_text, self.on_key_press, self.on_mouse_press)
 
 		self.rerender()
 
@@ -46,8 +46,10 @@ class CodeArea(ast.Document):
 	def _append(self, text, attributes):
 		self.document.insert_text(len(self.document.text),text, attributes)
 	
-	def on(self):
-		return self.caret.get_style("element")
+	def on(self, pos=None):
+		if pos == None:
+			pos = self.caret.position
+		return self.document.get_style("element", pos)
 	
 	def on_text(self, text):
 		self.on().on_text(text)
@@ -65,9 +67,11 @@ class CodeArea(ast.Document):
 	def on_key_press(self, symbol, modifiers):
 		self.on().on_key_press(symbol, modifiers)
 		self.rerender()
-	
-	def on_click(self):
-		self.on().on_click(text)
+
+	def on_mouse_press(self, x, y, button, modifiers):
+		print "on_mouse_press"
+		pos = self.layout.get_position_from_point(x,y)
+		self.on(pos).on_mouse_press(x, y, button, modifiers)
 		self.rerender()
 	
 
@@ -76,6 +80,9 @@ class Window(pyglet.window.Window):
 	def __init__(self, *args, **kwargs):
 		super(Window, self).__init__(640, 400, caption='lemon is at it again',
 				resizable=True)
+
+		self.set_icon(pyglet.image.load('icon32x32.png'))
+
 
 		self.batch = pyglet.graphics.Batch()
 		self.code = CodeArea(self.width, self.height, self.batch, self)
