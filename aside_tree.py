@@ -3,83 +3,88 @@
 
 
 
-#lets ingraft this onto the element tree. get rid of the document parameters too?
-#and fix all the naming conventions and formating and super() calls ...
+#lets ingraft this onto the element tree
 
 
 
 
+
+
+global document
+global caret
 
 """
-subclass from Document and implement append.
+subclass from Document, implement append and set aside_tree.document to it
 """
-
 class Document(object):
 	def __init__(self):
 		self.indentation = 0
+		self.on_a_new_line = True
+		self.indent_length = 4
 	def indent(self):
 		self.indentation += 1
 	def dedent(self):
 		self.indentation -= 1
-
-class test_document(Document):
-	def __init__(self):
-		Document.__init__(self)
-		self.text = ""
-		self.on_a_new_line = True
-	def __del__(self):
-		#print self.text.replace("\n","\\n\n")
-		print self.text
 	def append(self, text, attributes):
 		if self.on_a_new_line:
 			self.on_a_new_line = False
-			self.append(self.indentation*"    ",attributes)
-		self.on_a_new_line = (text == "\n")
-		self.text += text
-		
+			self._append(self.return_indent(), attributes)
+			self.on_a_new_line = (text == "\n")
+	def indent_spaces(self):
+		return " "*self.indent_length
 
 
 
 
 
-class element(object):
+
+
+
+
+
+
+
+
+class Element(object):
 	def on_text(self, motion):
-		print self
+		print self, motion
+	
+	def on_text_motion(self, motion, select=False):
+		print self, motion, select
 
 
 
-"""
 
-things that make up a template
-indenting is still broken, as it is done with a newline...and sometimes newline comes before a dedent
-"""
 
-class piece(element):
+
+
+class piece(Element):
 	pass
 
-class T(piece):
+class t(piece):
 	def __init__(self, text):
 		self.text = text
-	def render(self, document, node):
-		document.append(self.text, {"node":node})
+	def render(self, node):
+		document.append(self.text, {"element":node})
 
 class newline(piece):
-	def render(self, document, node):
-		document.append("\n" , {"node":node})#
+	def render(self, node):
+		document.append("\n" , {"element":node})#
 
 class indent(piece):
-	def render(self, document, node):
+	def render(self, node):
 		document.indent()
 
 class dedent(piece):
-	def render(self, document, node):
+	def render(self, node):
 		document.dedent()
 
 class child(piece):
 	def __init__(self, name):
 		self.name = name
-	def render(self, document, node):
-		node.__dict__[self.name].render(document)
+	def render(self, node):
+		print node.__dict__[self.name]
+		node.__dict__[self.name].render()
 	
 
 
@@ -92,109 +97,124 @@ class child(piece):
 class template(object):
 	def __init__(self, items):
 		self.items = items
-	def render(self, document, node):
+	def render(self, node):
 		assert isinstance(document, Document)
 		for item in self.items:
 			assert(isinstance(item, piece))
-			item.render(document, node)
+			item.render(node)
 
 
 
-			
 
 """
 widgets
 """
-class widget(element):
+class Widget(Element):
 	pass
 
-#could we derive this from a label or something to save work?
-#embed an unformateddocument and do something to a caret
-class text_widget(widget):
+class TextWidget(Widget):
 	def __init__(self, text):
-		self.inner_document = pyglet.UnformatedDocument(text)
-		self.caret = pyglet.text.caret.Caret(self.layout, self.batch, (255,255,255))
-	def render(self, document):
-		document.append(self.inner_document.text, {"node":self})
+		self.text = text
 
-	"""
-	def on_text_motion(self, motion):
-#		self.code.caret.on_text_motion(motion)
-		print 
+	@property
+	def caret_position(self):
+		if caret.get_style("element") != self:
+			raise Exception("caret isnt at me, dont ask me for position")
+		return caret.get_style("position")
 
+	@caret_position.setter
+	def set_caret_position(self, value):
+		caret.position = caret.position - value
+	
 		
-	def on_text_motion_select(self, motion):
-		self.code.caret.on_text_motion_select(motion)
+	def render(self):
+		for position, letter in enumerate(self.text):
+			document.append(self.text, {"element":self})
+#			, "position":self.caret_position})
+	
+	def on_text(self, text):
+		pos = self.caret_position
+		self.caret_position += len(text)
+		self.text = self.text[:pos] + text + self.text[pos:]
+		parent.on_edit(self)
+	
+	def on_text_motion(self, motion, select=False):
+		if motion == key.MOTION_BACKSPACE:
+			if self.caret_position > 0:
+				self.caret_position -= 1
+				self.text = self.text[:position-1]+self.text[position:]
+		if motion == key.MOTION_LEFT:
+			self.caret_position = max(0, self.caret_position - 1)
+		elif motion == key.MOTION_RIGHT:
+			self.caret_position = min(len(self.text), self.caret_position + 1)
 
-	def on_click(self):
-
-	def grab_caret(self):
-		document.active_caret = self.caret
+	"""
+		emits on_edit
 	"""
 
-class button_widget(widget):
+
+
+
+class ButtonWidget(Widget):
 	def __init__(self, text="[🔳]"):
 		self.text = text
 	def on_click(self):
 		parent.clicked(self)
-	def render(self, document):
-		document.append(self.text, {"node":self})
+	def render(self):
+		document.append(self.text, {"element":self})
 	
-class number_widget(widget):
+class NumberWidget(Widget):
 	def __init__(self, text):
 		self.text = text
-		self.plus_button = button_widget()
-		self.minus_button = button_widget()
-	def render(self, document):
-		self.minus_button.render(document)
-		document.append(self.text, {"node":self})
-		self.plus_button.render(document)
+		self.plus_button = ButtonWidget()
+		self.minus_button = ButtonWidget()
+	def render(self):
+		self.minus_button.render()
+		document.append(self.text, {"element":self})
+		self.plus_button.render()
 		
-	
 
 
 
 
 
 
-"""
-the AST tree building blocks
-
-in the end, it is always the node that is responsible for its render(), templated or not
-
-some division of the boilerplatish AST rote from the gui handling stuff would be good
-
-the AST stuff could be generated
-"""
 
 
-class ast_node(element):
+class AstNode(Element):
 	pass
 
-class text_node(ast_node):
+class TextNode(AstNode):
 	def __init__(self, value):
-		self.value = value
-	def render(self, document):
-		document.append(self.value, {"node":self})
+		self.widget = TextWidget(value)
+	def render(self):
+		self.widget.render()
 
-class placeholder_node(ast_node):
-	def __init__(self):#type..
-		self.text = text_node("placeholder")
-	def render(self, document):
-		document.append("<<"+">>", {"node":self})
+class PlaceholderNode(AstNode):
+	def __init__(self, name="placeholder", type=None, default=None, example=None):
+		d = (" (default:"+default+")") if default else ""
+		e = (" (for example:"+example+")") if example else ""
+		self.widget = TextWidget("<<"+name+d+e+">>")
+	
+	def render(self):
+		self.widget.render()
+		
 	#def replace(self, replacement):
 	#	parent.children[self.name] = replacement...
 	#def on_text(self, text):
 	#	print "plap"
-
+	
+	def on_edit(self, widget):
+		print "show menu"
+	
 	
 
-class templated_node(ast_node):
+class TemplatedNode(AstNode):
 	def __init__(self):
 		self.template_index = 0
 	template = property (lambda self: self.templates[self.template_index])
-	def render(self, document):
-		self.template.render(document, self)
+	def render(self):
+		self.template.render(self)
 	def prev_template(self):
 		self.template_index  -= 1
 		if self.template_index < 0:
@@ -210,47 +230,57 @@ class templated_node(ast_node):
 			next_template()
 
 
-class number_node(ast_node):
+
+
+
+class NumberNode(AstNode):
 	def __init__(self, value):
 		self.value = value
-		self.minus_button = button_widget()
-		self.plus_button = button_widget()
-	def render(self, document):
-		document.append(str(self.value), {"node":self})
+		self.minus_button = ButtonWidget()
+		self.plus_button = ButtonWidget()
+	def render(self):
+		document.append(str(self.value), {"element":self})
 
 
-#should this automatically indent? and show the button left of the first item...
 
-class statements_node(ast_node):
+class StatementsNode(AstNode):
 	def __init__(self, items):
 		self.items = items
-		assert isinstance(items, list)
-		self.expand_collapse_button = button_widget()
-		self.set_expanded()
-	def render(self, document):
-		self.expand_collapse_button.render(document)
-		newline().render(document, self)
-		if not self.collapsed:
+		if not isinstance(items, list):
+			raise Exception("parameter to statements_node constructor is not a list")
+		self.expand_collapse_button = ButtonWidget()
+		self.expanded = False
+		self.toggle_expanded()
+	def render(self):
+		document.dedent()
+		self.expand_collapse_button.render()
+		document.append(document.indent_spaces()[len(self.expand_collapse_button.text)], {"element":self})
+		document.indent()
+		if self.expanded:
 			for item in self.items:
-				item.render(document)
-				newline().render(document, self)
-	def set_collapsed(self):
-		self.collapsed = True
-		self.expand_collapse_button.text = "+++"
-	def set_expanded(self):
-		self.collapsed = False
-		self.expand_collapse_button.text = "---"
+				item.render()
+				newline().render(self)
+	def toggle_expanded(self):
+		self.expanded = not self.expanded
+		if not self.expanded:
+			self.expand_collapse_button.text = "+++"
+		else:
+			self.expand_collapse_button.text = "---"
+	
+	def clicked(self, item):
+		if item == self.expand_collapse_button:
+			self.toggle_expanded()
 
 
 
 
-"""hummmmm, this is an odd one"""
-class variable_node(ast_node):
+
+class VariableReadNode(AstNode):
 	def __init__(self, name):
-		self.name = text_node(name)
-	def render(self, document):
-		self.name.render(document)
-		
+		self.name = TextWidget(name)
+	def render(self):
+		self.name.render()
+
 
 
 
@@ -263,69 +293,65 @@ now onto real programming
 """
 
 
-class root_node(templated_node):
-	def __init__(self,statements, author="banana", date_created="1.1.1.1111"):
-		templated_node.__init__(self)
-		self.templates = [template([T("program by "),child("author"), T(" created on "), child("date_created"), indent(), newline(), child("statements"), dedent(), T("end.")])]
-		self.statements = statements
-		assert isinstance(statements, statements_node)
-		self.author = text_node(author)
-		self.date_created = text_node(date_created)
+class RootNode(TemplatedNode):
+	def __init__(self, statements, author="banana", date_created="1.1.1.1111"):
+		super(RootNode, self).__init__()
+		assert isinstance(statements, StatementsNode)
 
-class while_node(templated_node):
+		self.templates = [template([t("program by "),child("author"), t(" created on "), child("date_created"), newline(), indent(), child("statements"), dedent(), t("end.")])]
+		self.statements = statements
+		self.author = TextWidget(author)
+		self.date_created = TextWidget(date_created)
+
+class WhileNode(TemplatedNode):
 	def __init__(self,condition,body):
-		templated_node.__init__(self)
-		self.templates = [template([T("while "), child("condition"), T(" do:"),indent(), newline(),child("body"),dedent()]),
-		template([T("repeat if"), child("condition"), T("is true:"),child("body"),T("go back up..")])]
+		super(WhileNode,self).__init__()
+
+		self.templates = [template([t("while "), child("condition"), t(" do:"),indent(), newline(),child("body"),dedent()]),
+		template([t("repeat if"), child("condition"), t("is true:"),child("body"),t("go back up..")])]
 		self.condition = condition
 		self.body = body
 
 
-class asignment_node(templated_node):
+class AsignmentNode(TemplatedNode):
 	def __init__(self, left, right):
-		templated_node.__init__(self)
+		super(AsignmentNode,self).__init__()
+		self.templates=[template([child("left"), t(" = "), child("right")]),
+				template([t("set "), child("left"), t(" to "), child("right")]),
+				template([t("have "), child("left"), t(" be "), child("right")])]
 		self.left=left
 		self.right=right
-		self.templates=[template([child("left"), T(" = "), child("right")]),
-									template([T("set "), child("left"), T(" to "), child("right")]),
-									template([T("have "), child("left"), T(" be "), child("right")])]
 		
-class is_less_than_node(templated_node):
+class IsLessThanNode(TemplatedNode):
 	def __init__(self, left, right):
-		templated_node.__init__(self)
+		super(IsLessThanNode,self).__init__()
+
+		self.templates=[template([child("left"), t(" < "), child("right")])]
 		self.left=left
 		self.right=right
-		self.templates=[template([child("left"), T(" < "), child("right")])]
 		
 
-class print_node(templated_node):
+class PrintNode(TemplatedNode):
 	def __init__(self,value):
-		templated_node.__init__(self)
+		super(PrintNode,self).__init__()
 	
-		self.templates = [template([T("print "), child("value")]),
-									template([T("say"), child("value")])]
+		self.templates = [template([t("print "), child("value")]),
+				template([t("say"), child("value")])]
 		self.value = value
 
 
 
+root = RootNode(StatementsNode([AsignmentNode(TextNode("a"), NumberNode(1)),
+									AsignmentNode(TextNode("b"), NumberNode(5)), 
+									WhileNode(IsLessThanNode(VariableReadNode("a"), VariableReadNode("b")),
+									StatementsNode([
+									PrintNode(
+									VariableReadNode("a")), 
+									PlaceholderNode()])), 
+									PlaceholderNode()]))
 
 
-	
-test = templated_node()
-test.templates = [template([T("hello")])]
-test.render(test_document())
 
-
-
-root = root_node(statements_node([asignment_node(text_node("a"), number_node(1)),
-																asignment_node(text_node("b"), number_node(5)), 
-									while_node(is_less_than_node(variable_node("a"), variable_node("b")),
-										statements_node([print_node(variable_node("a")), placeholder_node()])), placeholder_node()]))
-
-
-root.render(test_document())
-
- 
 
 """
 
