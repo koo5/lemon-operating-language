@@ -8,11 +8,11 @@
 
 import sys#:p
 import pyglet
-import tinytree
-
 
 global document
 global caret
+
+
 
 """
 subclass from Document, implement append and set aside_tree.document to it
@@ -46,13 +46,29 @@ class Document(object):
 
 
 
-
-
-
-
-class Element(tinytree.Tree):
+class Element(object):
 	def __init__(self):
-		tinytree.Tree.__init__(self)
+		super(Element,self).__init__()
+
+	#tree structure fun
+
+		self.children = {}
+		self.parent = None
+	
+	def __getattr__(self, name):
+		if self.children.has_key(name):
+			return self.children[name]
+
+	def set(self, key, item):
+		self.children[key] = item
+		item.parent = self
+
+	def replace(self, item):
+		self.parent.children[
+				self.parent.children.values.index(self)
+			] = item
+
+	#/tree structure fun
 
 	def on_text(self, motion):
 		print self, motion
@@ -61,10 +77,18 @@ class Element(tinytree.Tree):
 		print self, motion, select
 
 	def on_key_press(self, symbol, modifiers):
-		print pyglet.window.key.modifiers_string(modifiers), pyglet.window.key.symbol_string(symbol)
+		print	(pyglet.window.key.modifiers_string(modifiers),
+				pyglet.window.key.symbol_string(symbol))
 		
 	def on_mouse_press(self, x, y, button, modifiers):
 		print x,y,button,modifiers
+
+
+
+
+
+
+
 
 
 
@@ -95,7 +119,7 @@ class child(piece):
 	def __init__(self, name):
 		self.name = name
 	def render(self, node):
-		node.__dict__[self.name].render()
+		node.children[self.name].render()
 	
 
 
@@ -109,7 +133,8 @@ class template(object):
 	def __init__(self, items):
 		self.items = items
 	def render(self, node):
-		assert isinstance(document, Document)
+		if not isinstance(document, Document):
+			raise Exception ("document is not Document")
 		for item in self.items:
 			assert(isinstance(item, piece))
 			item.render(node)
@@ -180,8 +205,9 @@ class NumberWidget(Widget):
 	def __init__(self, text):
 		super(NumberWidget, self).__init__()
 		self.text = text
-		self.plus_button = ButtonWidget()
+#		self.add(ButtonWidget("minus")
 		self.minus_button = ButtonWidget()
+		self.addChildrenFromList(self.plus_button, self.minus_button)
 	def render(self):
 		self.minus_button.render()
 		document.append(self.text, {"element":self})
@@ -264,13 +290,26 @@ class NumberNode(AstNode):
 
 
 
+
+"""
+#couple options:
+store the positions of characters in an array ourselves - 
+	hmm, this actually sounds pretty simple, might be dumping pyglets documents one day
+store positions in attributes char by char
+	for everything
+	for just active.. nope...clicks...
+"""
+
+
+
+
 class StatementsNode(AstNode):
 	def __init__(self, items):
 		super(StatementsNode, self).__init__()
-		self.addChildrenFromList(items)
+		self.items = items
 		if not isinstance(items, list):
 			raise Exception("parameter to statements_node constructor is not a list")
-		self.expand_collapse_button = ButtonWidget()
+		self.set('expand_collapse_button', ButtonWidget())
 		self.expanded = False
 		self.toggle_expanded()
 	def render(self):
@@ -278,7 +317,7 @@ class StatementsNode(AstNode):
 		self.expand_collapse_button.render()
 		document.indent()
 		if self.expanded:
-			for item in self.children:
+			for item in self.items:
 				item.render()
 				newline().render(self)
 	def toggle_expanded(self):
@@ -323,9 +362,9 @@ class RootNode(TemplatedNode):
 
 		self.templates = [template([t("program by "),child("author"), t(" created on "), child("date_created"), newline(), indent(), child("statements"), dedent(), t("end.")]),
 						template([t("lemon operating language running on python"), t(sys.version.replace("\n", "")), t(" READY."), newline(),indent(), child("statements"), dedent()])]
-		self.statements = statements
-		self.author = TextWidget(author)
-		self.date_created = TextWidget(date_created)
+		self.set('statements', statements)
+		self.set('author', TextWidget(author))
+		self.set('date_created', TextWidget(date_created))
 
 class WhileNode(TemplatedNode):
 	def __init__(self,condition,body):
@@ -333,8 +372,8 @@ class WhileNode(TemplatedNode):
 
 		self.templates = [template([t("while "), child("condition"), t(" do:"),indent(), newline(),child("body"),dedent()]),
 		template([t("repeat if"), child("condition"), t("is true:"),child("body"),t("go back up..")])]
-		self.condition = condition
-		self.body = body
+		self.set('condition', condition)
+		self.set('body', body)
 
 
 class AsignmentNode(TemplatedNode):
@@ -343,17 +382,16 @@ class AsignmentNode(TemplatedNode):
 		self.templates=[template([child("left"), t(" = "), child("right")]),
 				template([t("set "), child("left"), t(" to "), child("right")]),
 				template([t("have "), child("left"), t(" be "), child("right")])]
-		self.left=left
-		self.right=right
-		self.addChildrenFromList([left,right])
+		self.set('left', left)
+		self.set('right', right)
 		
 class IsLessThanNode(TemplatedNode):
 	def __init__(self, left, right):
 		super(IsLessThanNode,self).__init__()
 
 		self.templates=[template([child("left"), t(" < "), child("right")])]
-		self.left=left
-		self.right=right
+		self.set('left', left)
+		self.set('right', right)
 		
 
 class PrintNode(TemplatedNode):
@@ -362,7 +400,7 @@ class PrintNode(TemplatedNode):
 	
 		self.templates = [template([t("print "), child("value")]),
 				template([t("say"), child("value")])]
-		self.value = value
+		self.set('value', value)
 
 """
 #set backlight brightness to %{number}%
@@ -387,7 +425,6 @@ root = RootNode(StatementsNode([AsignmentNode(TextNode("a"), NumberNode(1)),
 									VariableReadNode("a")), 
 									PlaceholderNode()])), 
 									PlaceholderNode()]))
-
 
 
 
