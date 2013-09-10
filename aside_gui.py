@@ -47,7 +47,7 @@ class CodeArea(ast.Document):
 
 	def _append(self, text, attributes):
 		self.document.insert_text(len(self.document.text),text, attributes)
-		sys.stdout.write(text)
+#		sys.stdout.write(text)
 
 	
 	def on(self, pos=None):
@@ -82,7 +82,7 @@ class CodeArea(ast.Document):
 class Window(pyglet.window.Window):
 
 	def __init__(self, *args, **kwargs):
-		super(Window, self).__init__(640, 400, caption='lemon is at it again',
+		super(Window, self).__init__(640, 400, caption='lemon party',
 				resizable=True)
 
 		self.set_icon(pyglet.image.load('icon32x32.png'))
@@ -92,6 +92,14 @@ class Window(pyglet.window.Window):
 		self.code = CodeArea(self.width, self.height, self.batch, self)
 		
 		self.test()
+		
+		self.push_handlers(self.on_key_press)
+
+	def on_key_press(self, key, modifiers):
+		if key == pyglet.window.key.F11:
+			self.toggleFullscreen()
+		else:
+			return super(Window, self).on_key_press(key, modifiers)
 		
 	def on_resize(self, width, height):
 		super(Window, self).on_resize(width, height)
@@ -206,6 +214,12 @@ class Window(pyglet.window.Window):
 			self.focus.caret.position = len(self.focus.document.text)
 
 	"""
+	def toggleFullscreen(self):
+		print "going fullscreen"
+		self.set_fullscreen(not self.fullscreen)
+		
+
+	
 window = Window(resizable=True)
 pyglet.app.run()
 

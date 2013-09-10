@@ -29,7 +29,7 @@ class Document(object):
 		self.indentation -= 1
 		
 	def append(self, text, element, attributes={}):
-		attributes.update({'element':element})
+		attributes.update({'element':element, 'color':element.color})
 		if self.do_indent:
 			self.do_indent = False
 			self._append(self.indent_spaces(), attributes)
@@ -50,6 +50,7 @@ class Document(object):
 class Element(object):
 	def __init__(self):
 		super(Element,self).__init__()
+		self.color = (200,255,200,255)
 
 	#tree structure fun
 
@@ -84,17 +85,17 @@ class Element(object):
 	#/tree structure fun
 
 	def on_text(self, motion):
-		print self, motion
+		print "Element on_text:", self, motion
 	
 	def on_text_motion(self, motion, select=False):
-		print self, motion, select
+		print "Element:", self, motion, select
 
 	def on_key_press(self, symbol, modifiers):
-		print	(pyglet.window.key.modifiers_string(modifiers),
-				pyglet.window.key.symbol_string(symbol))
+		print "Element:",  (pyglet.window.key.modifiers_string(modifiers),
+							pyglet.window.key.symbol_string(symbol))
 		
 	def on_mouse_press(self, x, y, button, modifiers):
-		print x,y,button,modifiers
+		print "Element:", x,y,button,modifiers
 
 
 
@@ -164,11 +165,14 @@ class Widget(Element):
 class TextWidget(Widget):
 	def __init__(self, text):
 		super(TextWidget, self).__init__()
-		self.text = text
+		self.color = (150,150,255,255)
 
+		self.text = text
+		
 	def get_caret_position(self):
 		if caret.get_style("element") != self:
-			raise Exception("caret isnt at me, dont ask me for position")
+			#raise Exception("caret isnt at me, dont ask me for position")
+			return 0
 		return caret.get_style("position")
 
 	def move_caret(self, value):
@@ -183,7 +187,9 @@ class TextWidget(Widget):
 		print pos
 		self.move_caret(len(text))
 		self.text = self.text[:pos] + text + self.text[pos:]
+		print self.text
 		self.parent.on_edit(self)
+		print "WOOOOTA"
 	
 	def on_text_motion(self, motion, select=False):
 		if motion == key.MOTION_BACKSPACE:
@@ -204,6 +210,7 @@ class TextWidget(Widget):
 class ButtonWidget(Widget):
 	def __init__(self, text="[🔳]"):
 		super(ButtonWidget, self).__init__()
+		self.color = (255,150,150,255)
 		self.text = text
 	def on_mouse_press(self, x, y, button, modifiers):
 		print "button clicked"
@@ -237,7 +244,7 @@ class NumberWidget(Widget):
 class AstNode(Element):
 	def __init__(self):
 		super(AstNode, self).__init__()
-
+		self.color = (0,255,0,255)
 
 class TextNode(AstNode):
 	def __init__(self, value):
@@ -252,27 +259,33 @@ class PlaceholderNode(AstNode):
 		self.default = default
 		self.example = example
 		self.set('widget', TextWidget(""))
+#		print self.widget.parent
 	
 	def render(self):
-		document.append("<<", self)
 		self.widget.render()
-		document.append(">>", self)
 		
+		textlen = len(self.widget.text)
+
 		d = (" (default:"+self.default+")") if self.default else ""
 		e = (" (for example:"+self.example+")") if self.example else ""
 
-		if d or e:
-			document.append("d+e", self)
+		backtext = "<<" + d + e + ">>"
+		backtextlen = len(backtext)
+		backtext = backtext[textlen:backtextlen - textlen]
 		
+		document.append(backtext, self, {'color':(130,130,130,255)})
 		
-	#def replace(self, replacement):
-	#	parent.children[self.name] = replacement...
-	#def on_text(self, text):
-	#	print "plap"
-	
 	def on_edit(self, widget):
 		print "show menu"
+
+	#def replace(self, replacement):
+	#	parent.children[self.name] = replacement...
 	
+	def on_text(self, text):
+		self.widget.on_text(text)
+	
+	def on_text_motion(self, motion, select=False):
+		self.widget.on_text_motion(motion, select)
 	
 
 class TemplatedNode(AstNode):
@@ -427,7 +440,7 @@ class PrintNode(TemplatedNode):
 		super(PrintNode,self).__init__()
 	
 		self.templates = [template([t("print "), child("value")]),
-				template([t("say"), child("value")])]
+				template([t("say "), child("value")])]
 		self.set('value', value)
 
 """
