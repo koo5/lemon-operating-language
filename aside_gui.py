@@ -105,7 +105,7 @@ class Window(pyglet.window.Window):
 	def test(self):
 		self.code.root.dump()
 	#	pyglet.clock.schedule_interval(self.test_1, 5)
-		pyglet.clock.schedule_interval(self.test_2, 2)
+	#	pyglet.clock.schedule_interval(self.test_2, 2)
 	
 	def test_1(self, d):
 		self.code.on_mouse_press(3,372,1,16)

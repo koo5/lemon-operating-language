@@ -28,7 +28,8 @@ class Document(object):
 	def dedent(self):
 		self.indentation -= 1
 		
-	def append(self, text, attributes):
+	def append(self, text, element, attributes={}):
+		attributes.update({'element':element})
 		if self.do_indent:
 			self.do_indent = False
 			self._append(self.indent_spaces(), attributes)
@@ -71,7 +72,7 @@ class Element(object):
 			] = item
 
 	def dump(self):
-		document.append(self.__repr__(), {})
+		document.append(self.__repr__(), self)
 		for item in self.children.itervalues():
 			document.indent()
 			if isinstance(item, Element):
@@ -113,11 +114,11 @@ class t(piece):
 	def __init__(self, text):
 		self.text = text
 	def render(self, node):
-		document.append(self.text, {"element":node})
+		document.append(self.text, node)
 
 class newline(piece):
 	def render(self, node):
-		document.append("\n" , {"element":node})#
+		document.append("\n" , node)#
 
 class indent(piece):
 	def render(self, node):
@@ -165,31 +166,28 @@ class TextWidget(Widget):
 		super(TextWidget, self).__init__()
 		self.text = text
 
-	@property
-	def caret_position(self):
+	def get_caret_position(self):
 		if caret.get_style("element") != self:
 			raise Exception("caret isnt at me, dont ask me for position")
 		return caret.get_style("position")
 
-	@caret_position.setter
-	def set_caret_position(self, value):
-		caret.position = caret.position - value
+	def move_caret(self, value):
+		caret.position = caret.position + value
 		
 	def render(self):
 		for position, letter in enumerate(self.text):
-			document.append(self.text[position], {"element":self})
-#			, "position":self.caret_position})
+			document.append(self.text[position], self, {"position":position})
 	
 	def on_text(self, text):
-		pos = self.caret_position
-		self.caret_position += len(text)
+		pos = self.get_caret_position()
+		print pos
+		self.move_caret(len(text))
 		self.text = self.text[:pos] + text + self.text[pos:]
 		self.parent.on_edit(self)
 	
 	def on_text_motion(self, motion, select=False):
 		if motion == key.MOTION_BACKSPACE:
-			if self.caret_position > 0:
-				self.caret_position -= 1
+			if self.get_caret_position() > 0:
 				self.text = self.text[:position-1]+self.text[position:]
 		if motion == key.MOTION_LEFT:
 			self.caret_position = max(0, self.caret_position - 1)
@@ -210,8 +208,12 @@ class ButtonWidget(Widget):
 	def on_mouse_press(self, x, y, button, modifiers):
 		print "button clicked"
 		self.parent.clicked(self)
+	def on_key_press(self, symbol, modifiers):
+		if symbol == pyglet.window.key.RCTRL:
+			print "button pressed"
+			self.parent.clicked(self)
 	def render(self):
-		document.append(self.text, {"element":self})
+		document.append(self.text, self)
 	
 class NumberWidget(Widget):
 	def __init__(self, text):
@@ -221,7 +223,7 @@ class NumberWidget(Widget):
 		self.addChildrenFromList(self.plus_button, self.minus_button)
 	def render(self):
 		self.minus_button.render()
-		document.append(self.text, {"element":self})
+		document.append(self.text, self)
 		self.plus_button.render()
 		
 
@@ -247,12 +249,21 @@ class TextNode(AstNode):
 class PlaceholderNode(AstNode):
 	def __init__(self, name="placeholder", type=None, default=None, example=None):
 		super(PlaceholderNode, self).__init__()
-		d = (" (default:"+default+")") if default else ""
-		e = (" (for example:"+example+")") if example else ""
-		self.widget = TextWidget("<<"+name+d+e+">>")
+		self.default = default
+		self.example = example
+		self.set('widget', TextWidget(""))
 	
 	def render(self):
+		document.append("<<", self)
 		self.widget.render()
+		document.append(">>", self)
+		
+		d = (" (default:"+self.default+")") if self.default else ""
+		e = (" (for example:"+self.example+")") if self.example else ""
+
+		if d or e:
+			document.append("d+e", self)
+		
 		
 	#def replace(self, replacement):
 	#	parent.children[self.name] = replacement...
@@ -297,7 +308,7 @@ class NumberNode(AstNode):
 		self.minus_button = ButtonWidget()
 		self.plus_button = ButtonWidget()
 	def render(self):
-		document.append(str(self.value), {"element":self})
+		document.append(str(self.value), self)
 
 
 
@@ -325,9 +336,16 @@ class StatementsNode(AstNode):
 		self.toggle_expanded()
 	def render(self):
 		document.dedent()
+
+		padding = " " * (document.indent_length - 1)
+
+		if self.expanded:
+			self.expand_collapse_button.text = "-" + padding
+		else:
+			self.expand_collapse_button.text = "+" + padding
+
 		self.expand_collapse_button.render()
 		document.indent()
-		document.append(document.indent_spaces()[:-len(self.expand_collapse_button.text)],{})#a hack for now
 		if self.expanded:
 			for item in self.items:
 				item.render()
@@ -337,15 +355,8 @@ class StatementsNode(AstNode):
 	
 	def toggle_expanded(self):
 		self.expanded = not self.expanded
-		if not self.expanded:
-			self.expand_collapse_button.text = "+"
-		else:
-			self.expand_collapse_button.text = "-"
+		self.expand_collapse_button.text += "we need dirty flags or something to that effect"
 	
-	def on_mouse_press(self, x, y, button, modifiers):
-		print banana
-		if item == self.expand_collapse_button:
-			self.toggle_expanded()
 
 	def clicked(self, item):
 		if item is self.expand_collapse_button:
@@ -388,7 +399,7 @@ class WhileNode(TemplatedNode):
 		super(WhileNode,self).__init__()
 
 		self.templates = [template([t("while "), child("condition"), t(" do:"),indent(), newline(),child("statements"),dedent()]),
-		template([t("repeat if"), child("condition"), t("is true:"),child("statements"),t("go back up..")])]
+		template([t("repeat if "), child("condition"), t(" is true:"),indent(),newline(),child("statements"),dedent(),t("go back up..")])]
 		self.set('condition', condition)
 		self.set('statements', statements)
 
@@ -434,7 +445,8 @@ class CallNode(TemplatedNode):
 		
 
 
-root = RootNode(StatementsNode([AsignmentNode(TextNode("a"), NumberNode(1)),
+root = RootNode(StatementsNode([PlaceholderNode(), 
+									AsignmentNode(TextNode("a"), NumberNode(1)),
 									AsignmentNode(TextNode("b"), NumberNode(5)), 
 									WhileNode(IsLessThanNode(VariableReadNode("a"), VariableReadNode("b")),
 									StatementsNode([
@@ -446,6 +458,20 @@ root = RootNode(StatementsNode([AsignmentNode(TextNode("a"), NumberNode(1)),
 
 
 """
+
+
+function declarations and calls are missing. it should allow parameters inside the function signature like this:
+To decide what number is the larger of (N - number) and (M - number):
+...
+templates inside templates..
+
+
+
+todo now:placeholder text input + language syntax tree 
+
+
+
+
 
 
 <AnkhMorporkian_> it's probably a bad idea to have newline as its own class. it'd be better to maintain it in the document class, since you have to have that anyways when you're using it.
