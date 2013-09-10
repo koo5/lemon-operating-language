@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import pyglet
+import sys
 
 import aside_tree as ast
 
@@ -17,7 +18,8 @@ class CodeArea(ast.Document):
 		self.batch = batch
 		
 		self.document = pyglet.text.document.FormattedDocument("ABC")
-		self.document.set_style(0, len(self.document.text),dict(color=(255,255,255,255)))
+		self.document.set_style(0, len(self.document.text),
+			dict(color=(255,255,255,255)))#, font_name="monospace")) #StopIteration
 						
 		self.layout = pyglet.text.layout.IncrementalTextLayout(
 					self.document, width, height, multiline=True, batch=batch)
@@ -45,6 +47,8 @@ class CodeArea(ast.Document):
 
 	def _append(self, text, attributes):
 		self.document.insert_text(len(self.document.text),text, attributes)
+		sys.stdout.write(text)
+
 	
 	def on(self, pos=None):
 		if pos == None:
@@ -69,8 +73,8 @@ class CodeArea(ast.Document):
 		self.rerender()
 
 	def on_mouse_press(self, x, y, button, modifiers):
-		print "on_mouse_press"
 		pos = self.layout.get_position_from_point(x,y)
+		print "on_mouse_press", x, y, button, modifiers, pos
 		self.on(pos).on_mouse_press(x, y, button, modifiers)
 		self.rerender()
 	
@@ -87,6 +91,8 @@ class Window(pyglet.window.Window):
 		self.batch = pyglet.graphics.Batch()
 		self.code = CodeArea(self.width, self.height, self.batch, self)
 		
+		self.test()
+		
 	def on_resize(self, width, height):
 		super(Window, self).on_resize(width, height)
 		self.code.resize(width, height)
@@ -95,6 +101,20 @@ class Window(pyglet.window.Window):
 		pyglet.gl.glClearColor(0, 0, 0, 1)
 		self.clear()
 		self.batch.draw()
+		
+	def test(self):
+		self.code.root.dump()
+	#	pyglet.clock.schedule_interval(self.test_1, 5)
+		pyglet.clock.schedule_interval(self.test_2, 2)
+	
+	def test_1(self, d):
+		self.code.on_mouse_press(3,372,1,16)
+
+	def test_2(self, d):
+		print self.code.root.statements.items[2].statements
+		self.code.root.statements.items[2].statements.toggle_expanded()
+		self.code.rerender()
+		
 	"""
 	def on_mouse_motion(
 		self,

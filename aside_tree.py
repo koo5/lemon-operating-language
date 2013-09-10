@@ -20,7 +20,7 @@ subclass from Document, implement append and set aside_tree.document to it
 class Document(object):
 	def __init__(self):
 		self.indentation = 0
-		self.on_a_new_line = True
+		self.do_indent = True
 		self.indent_length = 4
 		
 	def indent(self):
@@ -29,10 +29,10 @@ class Document(object):
 		self.indentation -= 1
 		
 	def append(self, text, attributes):
-		if self.on_a_new_line:
-			self.on_a_new_line = False
+		if self.do_indent:
+			self.do_indent = False
 			self._append(self.indent_spaces(), attributes)
-		self.on_a_new_line = (text == "\n")
+		self.do_indent = (text == "\n")
 		self._append(text, attributes)
 			
 	def indent_spaces(self):
@@ -58,6 +58,8 @@ class Element(object):
 	def __getattr__(self, name):
 		if self.children.has_key(name):
 			return self.children[name]
+		else:
+			raise AttributeError
 
 	def set(self, key, item):
 		self.children[key] = item
@@ -67,6 +69,16 @@ class Element(object):
 		self.parent.children[
 				self.parent.children.values.index(self)
 			] = item
+
+	def dump(self):
+		document.append(self.__repr__(), {})
+		for item in self.children.itervalues():
+			document.indent()
+			if isinstance(item, Element):
+				item.dump()
+			else:
+				print item.__repr__()
+			document.dedent()
 
 	#/tree structure fun
 
@@ -205,8 +217,7 @@ class NumberWidget(Widget):
 	def __init__(self, text):
 		super(NumberWidget, self).__init__()
 		self.text = text
-#		self.add(ButtonWidget("minus")
-		self.minus_button = ButtonWidget()
+		self.set('minus_button', ButtonWidget("-"))
 		self.addChildrenFromList(self.plus_button, self.minus_button)
 	def render(self):
 		self.minus_button.render()
@@ -316,23 +327,29 @@ class StatementsNode(AstNode):
 		document.dedent()
 		self.expand_collapse_button.render()
 		document.indent()
+		document.append(document.indent_spaces()[:-len(self.expand_collapse_button.text)],{})#a hack for now
 		if self.expanded:
 			for item in self.items:
 				item.render()
 				newline().render(self)
+		else:
+			newline().render(self)
+	
 	def toggle_expanded(self):
 		self.expanded = not self.expanded
 		if not self.expanded:
-			self.expand_collapse_button.text = "+++"
+			self.expand_collapse_button.text = "+"
 		else:
-			self.expand_collapse_button.text = "---"
+			self.expand_collapse_button.text = "-"
 	
 	def on_mouse_press(self, x, y, button, modifiers):
 		print banana
 		if item == self.expand_collapse_button:
 			self.toggle_expanded()
 
-
+	def clicked(self, item):
+		if item is self.expand_collapse_button:
+			self.toggle_expanded()
 
 
 
@@ -367,13 +384,13 @@ class RootNode(TemplatedNode):
 		self.set('date_created', TextWidget(date_created))
 
 class WhileNode(TemplatedNode):
-	def __init__(self,condition,body):
+	def __init__(self,condition,statements):
 		super(WhileNode,self).__init__()
 
-		self.templates = [template([t("while "), child("condition"), t(" do:"),indent(), newline(),child("body"),dedent()]),
-		template([t("repeat if"), child("condition"), t("is true:"),child("body"),t("go back up..")])]
+		self.templates = [template([t("while "), child("condition"), t(" do:"),indent(), newline(),child("statements"),dedent()]),
+		template([t("repeat if"), child("condition"), t("is true:"),child("statements"),t("go back up..")])]
 		self.set('condition', condition)
-		self.set('body', body)
+		self.set('statements', statements)
 
 
 class AsignmentNode(TemplatedNode):
