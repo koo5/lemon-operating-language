@@ -172,10 +172,21 @@ class TextWidget(Widget):
 	def get_caret_position(self):
 		if caret.get_style("element") != self:
 			#raise Exception("caret isnt at me, dont ask me for position")
-			return 0
+			return len(self.text)
 		return caret.get_style("position")
 
 	def move_caret(self, value):
+		print "caret.position: ", caret.position
+		print "move by: ", value
+
+#		if 	(caret.get_style("element") != self) and value > 0:
+#			value = 0
+		if 	value < 0 and caret.position == 0:
+			value = 0
+		if value > 0 and caret.position == len(document.document.text):
+			value = 0
+
+		print "move by: ", value
 		caret.position = caret.position + value
 		
 	def render(self):
@@ -184,9 +195,10 @@ class TextWidget(Widget):
 	
 	def on_text(self, text):
 		pos = self.get_caret_position()
-		print pos
-		self.move_caret(len(text))
+		print "on_text pos: ", pos
 		self.text = self.text[:pos] + text + self.text[pos:]
+		#rerender would have to be here
+#		self.move_caret(len(text))
 		print self.text
 		self.parent.on_edit(self)
 		print "WOOOOTA"
@@ -195,10 +207,10 @@ class TextWidget(Widget):
 		if motion == key.MOTION_BACKSPACE:
 			if self.get_caret_position() > 0:
 				self.text = self.text[:position-1]+self.text[position:]
-		if motion == key.MOTION_LEFT:
-			self.caret_position = max(0, self.caret_position - 1)
-		elif motion == key.MOTION_RIGHT:
-			self.caret_position = min(len(self.text), self.caret_position + 1)
+#		if motion == key.MOTION_LEFT:
+#			self.caret_position = max(0, self.caret_position - 1)
+#		elif motion == key.MOTION_RIGHT:
+#			self.caret_position = min(len(self.text), self.caret_position + 1)
 
 	"""
 		emits on_edit
@@ -216,7 +228,7 @@ class ButtonWidget(Widget):
 		print "button clicked"
 		self.parent.clicked(self)
 	def on_key_press(self, symbol, modifiers):
-		if symbol == pyglet.window.key.RCTRL:
+		if symbol == pyglet.window.key.RETURN:
 			print "button pressed"
 			self.parent.clicked(self)
 	def render(self):
@@ -458,6 +470,8 @@ class CallNode(TemplatedNode):
 		
 
 
+#root = PlaceholderNode()
+
 root = RootNode(StatementsNode([PlaceholderNode(), 
 									AsignmentNode(TextNode("a"), NumberNode(1)),
 									AsignmentNode(TextNode("b"), NumberNode(5)), 
@@ -467,7 +481,6 @@ root = RootNode(StatementsNode([PlaceholderNode(),
 									VariableReadNode("a")), 
 									PlaceholderNode()])), 
 									PlaceholderNode()]))
-
 
 
 """

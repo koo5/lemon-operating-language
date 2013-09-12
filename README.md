@@ -3,7 +3,6 @@
 Requirements:
 pyglet
 marisa-trie
-tinytree
 
 Use pip to install.
 

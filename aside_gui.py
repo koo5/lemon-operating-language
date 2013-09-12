@@ -26,7 +26,7 @@ class CodeArea(ast.Document):
 
 		ast.caret = self.caret = pyglet.text.caret.Caret(self.layout, self.batch, (255,0,0))
 		
-		self.active_caret = self.caret
+		self.caret.position = 115
 
 		self.layout.x = 2
 		self.layout.y = 2
@@ -53,6 +53,7 @@ class CodeArea(ast.Document):
 	def on(self, pos=None):
 		if pos == None:
 			pos = self.caret.position
+		print "pos: ",pos	
 		return self.document.get_style("element", pos)
 	
 	def on_text(self, text):
