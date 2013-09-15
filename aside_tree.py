@@ -3,25 +3,25 @@
 
 
 
-#lets ingraft this onto the element tree
-
-
-import sys#:p
+import sys
 import pyglet
+
+
 
 global document
 global caret
-
+global active
 
 
 """
-subclass from Document, implement append and set aside_tree.document to it
+subclass from Document, implement append and set aside_tree.document to an instance of it
 """
-class Document(object):
+class Document(pyglet.event.EventDispatcher):
 	def __init__(self):
 		self.indentation = 0
 		self.do_indent = True
 		self.indent_length = 4
+		self.register_event_type('post_render')
 		
 	def indent(self):
 		self.indentation += 1
@@ -47,7 +47,7 @@ class Document(object):
 
 
 
-class Element(object):
+class Element(pyglet.event.EventDispatcher):
 	def __init__(self):
 		super(Element,self).__init__()
 		self.color = (200,255,200,255)
@@ -88,17 +88,18 @@ class Element(object):
 		print "Element on_text:", self, motion
 	
 	def on_text_motion(self, motion, select=False):
-		print "Element:", self, motion, select
+		print "on_text_motion default Element handler:", self, motion, select
 
 	def on_key_press(self, symbol, modifiers):
-		print "Element:",  (pyglet.window.key.modifiers_string(modifiers),
+		print "on_key_press default Element handler:",  (pyglet.window.key.modifiers_string(modifiers),
 							pyglet.window.key.symbol_string(symbol))
 		
 	def on_mouse_press(self, x, y, button, modifiers):
-		print "Element:", x,y,button,modifiers
+		print "on_mouse_press default Element handler:", x,y,button,modifiers
 
 
-
+	def is_caret_on_me(self):
+		return active == self
 
 
 
@@ -162,11 +163,14 @@ widgets
 class Widget(Element):
 	pass
 
+
+
+
 class TextWidget(Widget):
 	def __init__(self, text):
 		super(TextWidget, self).__init__()
+		self.register_event_type('on_edit')
 		self.color = (150,150,255,255)
-
 		self.text = text
 		
 	def get_caret_position(self):
@@ -175,12 +179,15 @@ class TextWidget(Widget):
 			return len(self.text)
 		return caret.get_style("position")
 
-	def move_caret(self, value):
+	def move_caret(self):
+		if caret.get_style("element") != self:
+			return
+
 		print "caret.position: ", caret.position
+		
+		value = self.closure_move_by 
 		print "move by: ", value
 
-#		if 	(caret.get_style("element") != self) and value > 0:
-#			value = 0
 		if 	value < 0 and caret.position == 0:
 			value = 0
 		if value > 0 and caret.position == len(document.document.text):
@@ -197,20 +204,29 @@ class TextWidget(Widget):
 		pos = self.get_caret_position()
 		print "on_text pos: ", pos
 		self.text = self.text[:pos] + text + self.text[pos:]
-		#rerender would have to be here
-#		self.move_caret(len(text))
-		print self.text
-		self.parent.on_edit(self)
+
+		self.closure_move_by = len(text)
+		document.push_handlers(post_render = self.move_caret)
+
+		print self.text, len(self.text)
+		self.dispatch_event('on_edit', self)
 		print "WOOOOTA"
 	
 	def on_text_motion(self, motion, select=False):
-		if motion == key.MOTION_BACKSPACE:
-			if self.get_caret_position() > 0:
+		print 'on_text_motion', self, motion, self.get_caret_position()
+		if motion == pyglet.window.key.MOTION_BACKSPACE:
+			position = self.get_caret_position()
+			if position > 0:
 				self.text = self.text[:position-1]+self.text[position:]
+			self.dispatch_event('on_edit', self)
+			return True
+
 #		if motion == key.MOTION_LEFT:
 #			self.caret_position = max(0, self.caret_position - 1)
 #		elif motion == key.MOTION_RIGHT:
 #			self.caret_position = min(len(self.text), self.caret_position + 1)
+
+
 
 	"""
 		emits on_edit
@@ -257,6 +273,7 @@ class AstNode(Element):
 	def __init__(self):
 		super(AstNode, self).__init__()
 		self.color = (0,255,0,255)
+		self.menu = False
 
 class TextNode(AstNode):
 	def __init__(self, value):
@@ -266,30 +283,48 @@ class TextNode(AstNode):
 		self.widget.render()
 
 class PlaceholderNode(AstNode):
-	def __init__(self, name="placeholder", type=None, default=None, example=None):
+	def __init__(self, name="placeholder", type=None, default="None", example="None"):
 		super(PlaceholderNode, self).__init__()
 		self.default = default
 		self.example = example
 		self.set('widget', TextWidget(""))
-#		print self.widget.parent
+		self.widget.push_handlers(on_edit=self.on_widget_edit)
+	
+	def on_widget_edit(self, widget):
+		print widget
+		if widget == self.widget:
+			text = self.widget.text
+			print text
+			self.menu = [text, text, text, text]
 	
 	def render(self):
 		self.widget.render()
-		
-		textlen = len(self.widget.text)
 
 		d = (" (default:"+self.default+")") if self.default else ""
 		e = (" (for example:"+self.example+")") if self.example else ""
+		x = ""
+		if self.is_caret_on_me():
+			x = d + e
 
-		backtext = "<<" + d + e + ">>"
-		backtextlen = len(backtext)
-		backtext = backtext[textlen:backtextlen - textlen]
+		backtext = "<<" + x + ">>"
+		backtext = backtext[len(self.widget.text):]
 		
 		document.append(backtext, self, {'color':(130,130,130,255)})
 		
-	def on_edit(self, widget):
-		print "show menu"
+		startpos = len(document.document.text) - len(backtext) - len(self.widget.text)
+		
+		if self.menu:
+			self.render_menu()
+			
+	def render_menu(self):
+		for item in self.menu:
+			newline().render(self)
+			document.append(item, self)
 
+		newline().render(self)
+
+			
+		
 	#def replace(self, replacement):
 	#	parent.children[self.name] = replacement...
 	
@@ -374,7 +409,7 @@ class StatementsNode(AstNode):
 		if self.expanded:
 			for item in self.items:
 				item.render()
-				newline().render(self)
+				newline().render(item)
 		else:
 			newline().render(self)
 	
@@ -414,7 +449,7 @@ class RootNode(TemplatedNode):
 		assert isinstance(statements, StatementsNode)
 
 		self.templates = [template([t("program by "),child("author"), t(" created on "), child("date_created"), newline(), indent(), child("statements"), dedent(), t("end.")]),
-						template([t("lemon operating language running on python"), t(sys.version.replace("\n", "")), t(" READY."), newline(),indent(), child("statements"), dedent()])]
+						template([t("lemon operating language running on python"), t(sys.version.replace("\n", "")), t(" ready."), newline(),indent(), child("statements"), dedent()])]
 		self.set('statements', statements)
 		self.set('author', TextWidget(author))
 		self.set('date_created', TextWidget(date_created))
@@ -486,10 +521,6 @@ root = RootNode(StatementsNode([PlaceholderNode(),
 """
 
 
-function declarations and calls are missing. it should allow parameters inside the function signature like this:
-To decide what number is the larger of (N - number) and (M - number):
-...
-templates inside templates..
 
 
 

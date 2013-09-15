@@ -8,38 +8,48 @@ import aside_tree as ast
 
 class CodeArea(ast.Document):
 
-	def __init__(self, width, height, batch, parent):
+	def __init__(self, width, height, batch, window):
 		ast.Document.__init__(self)
 		ast.document = self
         
 		self.root = ast.root
 		
-		self.parent = parent
+		self.window = window
 		self.batch = batch
 		
 		self.document = pyglet.text.document.FormattedDocument("ABC")
-		self.document.set_style(0, len(self.document.text),
-			dict(color=(255,255,255,255)))#, font_name="monospace")) #StopIteration
+#		self.document.set_style(0, len(self.document.text),
+#			dict(color=(255,255,255,255)))
+#			dict(color=(255,255,255,255), bold=False,italic=False,font_name="monospace", font_size=26)) 
+			#StopIteration
 						
 		self.layout = pyglet.text.layout.IncrementalTextLayout(
-					self.document, width, height, multiline=True, batch=batch)
-
-		ast.caret = self.caret = pyglet.text.caret.Caret(self.layout, self.batch, (255,0,0))
-		
-		self.caret.position = 115
+					self.document, width-4, height-4, multiline=True, batch=batch)
 
 		self.layout.x = 2
 		self.layout.y = 2
 
-		parent.push_handlers(self.on_text, self.on_key_press, self.on_mouse_press)
+		window.set_handlers(self.on_text, self.on_text_motion, self.on_key_press, self.on_mouse_press)
+
+		ast.caret = self.caret = pyglet.text.caret.Caret(self.layout, self.batch, (255,0,0))
+		self.caret.position = 115
 
 		self.rerender()
 
 	def rerender(self):
+		ast.active = self.on()
+		#we're gonna need it while rendering, and we're not gonna have it
+	
 		pos = self.caret.position
+		self.layout.begin_update()
 		self.document.text = ""
 		self.root.render()
-		self.caret.position = pos#restore
+
+#		self.document.set_style(0, len(self.document.text),
+#			dict(bold=False,italic=False,font_name="monospace", font_size=26))
+			
+		self.layout.end_update()
+		self.dispatch_event('post_render')
 
 	def resize(self, width, height):
 		self.layout.width = width
@@ -61,9 +71,9 @@ class CodeArea(ast.Document):
 		self.rerender()
 
 	def on_text_motion(self, motion):
-		self.on().on_text_motion(motion)
+		res = self.on().on_text_motion(motion)
 		self.rerender()
-		return pyglet.event.EVENT_UNHANDLED
+		return res
 	
 	def on_text_motion_select(self, motion):
 		self.on().on_text_motion_select(motion)
