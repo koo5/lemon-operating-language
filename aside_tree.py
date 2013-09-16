@@ -34,12 +34,13 @@ class Document(pyglet.event.EventDispatcher):
 		self.indentation -= 1
 		
 	def append(self, text, element, attributes={}):
-		attributes.update({'element':element, 'color':element.color})
+		a = {'element':element, 'color':element.color}
+		a.update(attributes)
 		if self.do_indent:
 			self.do_indent = False
-			self._append(self.indent_spaces(), attributes)
+			self._append(self.indent_spaces(), a)
 		self.do_indent = (text == "\n")
-		self._append(text, attributes)
+		self._append(text, a)
 			
 	def indent_spaces(self):
 		return " " * self.indent_length * self.indentation
@@ -233,15 +234,31 @@ class TextWidget(Widget):
 class MenuWidget(Widget):
 	def __init__(self, items):
 		super(MenuWidget, self).__init__()
-		self.register_event_type('on_select', 'on_confirm', 'on_dismiss')
+		[self.register_event_type(i) for i in ['on_select', 'on_confirm', 'on_dismiss']]
 		self.color = (100,230,50,255)
 		self.items = items
-		self.pos = 0
+		self.sel = 0
 
 	def on_text_motion(self, motion, select=False):
+		print "~~~~~~~~~~~~~~~~~", motion
+		
 		if motion == pyglet.window.key.MOTION_DOWN:
-			self.pos += 1
+			self.sel += 1
 			self.dispatch_event('on_select', self)
+		if motion == pyglet.window.key.MOTION_UP:
+			self.sel -= 1
+			self.dispatch_event('on_select', self)
+			
+	def render(self):
+		for i, item in enumerate(self.items):
+			newline().render(self)
+			document.append(item, self, {'color':(255,100,100,255)} if self.sel == i else {})
+
+		newline().render(self)
+
+			
+		
+			
 	
 	
 
@@ -308,7 +325,7 @@ class PlaceholderNode(AstNode):
 		if widget == self.widget:
 			text = self.widget.text
 			print text
-			self.menu = [text, text, text, text]
+			self.menu = MenuWidget([text, text, text, text])
 	
 	def render(self):
 		self.widget.render()
@@ -327,17 +344,8 @@ class PlaceholderNode(AstNode):
 		startpos = len(document.document.text) - len(backtext) - len(self.widget.text)
 		
 		if self.menu:
-			self.render_menu()
+			self.menu.render()
 			
-	def render_menu(self):
-		for item in self.menu:
-			newline().render(self)
-			document.append(item, self)
-
-		newline().render(self)
-
-			
-		
 	#def replace(self, replacement):
 	#	parent.children[self.name] = replacement...
 	

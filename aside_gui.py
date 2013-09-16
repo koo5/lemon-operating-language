@@ -71,6 +71,8 @@ class CodeArea(ast.Document):
 		self.rerender()
 
 	def on_text_motion(self, motion):
+		print "ORANGE"
+		
 		res = self.on().on_text_motion(motion)
 		self.rerender()
 		return res

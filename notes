@@ -13,6 +13,8 @@ function declarations and calls are missing.   it should allow
 parameters inside the function signature like this: To decide what
 number is the larger of (N - number) and (M - number):
 
+https://wiki.python.org/moin/Templating
+
 
 
 
