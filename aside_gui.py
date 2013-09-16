@@ -20,8 +20,8 @@ class CodeArea(ast.Document):
 		self.document = pyglet.text.document.FormattedDocument("ABC")
 #		self.document.set_style(0, len(self.document.text),
 #			dict(color=(255,255,255,255)))
-#			dict(color=(255,255,255,255), bold=False,italic=False,font_name="monospace", font_size=26)) 
-			#StopIteration
+#				dict(color=(255,255,255,255), bold=False,italic=False,font_name="monospace", font_size=26)) 
+#http://code.google.com/p/pyglet/issues/list?can=1&q=stopiteration
 						
 		self.layout = pyglet.text.layout.IncrementalTextLayout(
 					self.document, width-4, height-4, multiline=True, batch=batch)

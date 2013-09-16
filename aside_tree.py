@@ -2,6 +2,11 @@
 # -*- coding: utf-8 -*-
 
 
+"""
+todo: figure out how to take out pyglets default event handling when we have handled the event (weird text behavior)
+todo: language syntax tree (for menu)
+"""
+
 
 import sys
 import pyglet
@@ -213,7 +218,6 @@ class TextWidget(Widget):
 		print "WOOOOTA"
 	
 	def on_text_motion(self, motion, select=False):
-		print 'on_text_motion', self, motion, self.get_caret_position()
 		if motion == pyglet.window.key.MOTION_BACKSPACE:
 			position = self.get_caret_position()
 			if position > 0:
@@ -221,16 +225,25 @@ class TextWidget(Widget):
 			self.dispatch_event('on_edit', self)
 			return True
 
-#		if motion == key.MOTION_LEFT:
-#			self.caret_position = max(0, self.caret_position - 1)
-#		elif motion == key.MOTION_RIGHT:
-#			self.caret_position = min(len(self.text), self.caret_position + 1)
 
 
 
-	"""
-		emits on_edit
-	"""
+
+
+class MenuWidget(Widget):
+	def __init__(self, items):
+		super(MenuWidget, self).__init__()
+		self.register_event_type('on_select', 'on_confirm', 'on_dismiss')
+		self.color = (100,230,50,255)
+		self.items = items
+		self.pos = 0
+
+	def on_text_motion(self, motion, select=False):
+		if motion == pyglet.window.key.MOTION_DOWN:
+			self.pos += 1
+			self.dispatch_event('on_select', self)
+	
+	
 
 
 
@@ -523,8 +536,6 @@ root = RootNode(StatementsNode([PlaceholderNode(),
 
 
 
-
-todo now:placeholder text input + language syntax tree 
 
 
 
