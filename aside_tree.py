@@ -3,8 +3,7 @@
 
 
 """
-todo: figure out how to take out pyglets default event handling when we have handled the event (weird text behavior)
-todo: language syntax tree (for menu)
+todo: language syntax tree? (for menu)
 """
 
 
@@ -91,18 +90,19 @@ class Element(pyglet.event.EventDispatcher):
 	#/tree structure fun
 
 	def on_text(self, motion):
-		print "Element on_text:", self, motion
+		print "on_text default Element handler:", self, motion
 	
 	def on_text_motion(self, motion, select=False):
-		print "on_text_motion default Element handler:", self, motion, select
+		print "on_text_motion default Element handler:", self, motion, select, " passing to caret"
+		self.code.caret.on_text_motion(motion, select)
 
 	def on_key_press(self, symbol, modifiers):
 		print "on_key_press default Element handler:",  (pyglet.window.key.modifiers_string(modifiers),
 							pyglet.window.key.symbol_string(symbol))
+
 		
 	def on_mouse_press(self, x, y, button, modifiers):
 		print "on_mouse_press default Element handler:", x,y,button,modifiers
-
 
 	def is_caret_on_me(self):
 		return active == self

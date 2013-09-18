@@ -18,10 +18,10 @@ class CodeArea(ast.Document):
 		self.batch = batch
 		
 		self.document = pyglet.text.document.FormattedDocument("ABC")
-#		self.document.set_style(0, len(self.document.text),
-#			dict(color=(255,255,255,255)))
-#				dict(color=(255,255,255,255), bold=False,italic=False,font_name="monospace", font_size=26)) 
-#http://code.google.com/p/pyglet/issues/list?can=1&q=stopiteration
+		#		self.document.set_style(0, len(self.document.text),
+		#			dict(color=(255,255,255,255)))
+		#				dict(color=(255,255,255,255), bold=False,italic=False,font_name="monospace", font_size=26)) 
+		#http://code.google.com/p/pyglet/issues/list?can=1&q=stopiteration
 						
 		self.layout = pyglet.text.layout.IncrementalTextLayout(
 					self.document, width-4, height-4, multiline=True, batch=batch)
@@ -29,10 +29,10 @@ class CodeArea(ast.Document):
 		self.layout.x = 2
 		self.layout.y = 2
 
-		window.set_handlers(self.on_text, self.on_text_motion, self.on_key_press, self.on_mouse_press)
-
 		ast.caret = self.caret = pyglet.text.caret.Caret(self.layout, self.batch, (255,0,0))
 		self.caret.position = 115
+
+		window.set_handlers(self.on_text, self.on_text_motion, self.on_key_press, self.on_mouse_press)
 
 		self.rerender()
 
@@ -106,8 +106,6 @@ class Window(pyglet.window.Window):
 		
 		self.test()
 		
-		self.push_handlers(self.on_key_press)
-
 	def on_key_press(self, key, modifiers):
 		if key == pyglet.window.key.F11:
 			self.toggleFullscreen()
@@ -135,105 +133,14 @@ class Window(pyglet.window.Window):
 		print self.code.root.statements.items[2].statements
 		self.code.root.statements.items[2].statements.toggle_expanded()
 		self.code.rerender()
-		
-	"""
-	def on_mouse_motion(
-		self,
-		x,
-		y,
-		dx,
-		dy,
-		):
 
-		for widget in self.widgets:
-			if widget.hit_test(x, y):
-				self.set_mouse_cursor(self.text_cursor)
-				break
-		else:
-			self.set_mouse_cursor(None)
-
-	def on_mouse_press(
-		self,
-		x,
-		y,
-		button,
-		modifiers,
-		):
-
-		for widget in self.widgets:
-			if widget.hit_test(x, y):
-				self.set_focus(widget)
-				break
-		else:
-			self.set_focus(None)
-
-		if self.focus:
-			self.focus.caret.on_mouse_press(x, y, button, modifiers)
-
-	def on_mouse_drag(
-		self,
-		x,
-		y,
-		dx,
-		dy,
-		buttons,
-		modifiers,
-		):
-
-		if self.focus:
-			self.focus.caret.on_mouse_drag(
-				x,
-				y,
-				dx,
-				dy,
-				buttons,
-				modifiers,
-				)
-	"""
-	def on_text_motion(self, motion):
-		self.code.caret.on_text_motion(motion)
-
-	def on_text_motion_select(self, motion):
-		self.code.caret.on_text_motion_select(motion)
-	"""
-	def on_key_press(self, symbol, modifiers):
-		if symbol == pyglet.window.key.TAB:
-			if modifiers & pyglet.window.key.MOD_SHIFT:
-				direction = -1
-			else:
-				direction = 1
-
-			if self.focus in self.widgets:
-				i = self.widgets.index(self.focus)
-			else:
-				i = 0
-				direction = 0
-
-			self.set_focus(self.widgets[(i + direction)
-						   % len(self.widgets)])
-		elif symbol == pyglet.window.key.ESCAPE:
-
-			pyglet.app.exit()
-
-	def set_focus(self, focus):
-		if self.focus:
-			self.focus.caret.visible = False
-			self.focus.caret.mark = self.focus.caret.position = 0
-
-		self.focus = focus
-		if self.focus:
-			self.focus.caret.visible = True
-			self.focus.caret.mark = 0
-			self.focus.caret.position = len(self.focus.document.text)
-
-	"""
 	def toggleFullscreen(self):
 		print "going fullscreen"
 		self.set_fullscreen(not self.fullscreen)
 		
 
 	
-window = Window(resizable=True)
+window = Window()
 pyglet.app.run()
 
 
