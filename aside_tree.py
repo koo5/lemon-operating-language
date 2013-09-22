@@ -11,7 +11,6 @@ import sys
 import pyglet
 
 
-
 global document
 global caret
 global active
@@ -31,7 +30,7 @@ class Document(pyglet.event.EventDispatcher):
 		self.indentation += 1
 	def dedent(self):
 		self.indentation -= 1
-		
+			
 	def append(self, text, element, attributes={}):
 		a = {'element':element, 'color':element.color}
 		a.update(attributes)
@@ -56,13 +55,11 @@ class Element(pyglet.event.EventDispatcher):
 	def __init__(self):
 		super(Element,self).__init__()
 		self.color = (200,255,200,255)
-
-	#tree structure fun
-
 		self.children = {}
 		self.parent = None
 	
 	def __getattr__(self, name):
+
 		if self.children.has_key(name):
 			return self.children[name]
 		else:
@@ -87,8 +84,6 @@ class Element(pyglet.event.EventDispatcher):
 				print item.__repr__()
 			document.dedent()
 
-	#/tree structure fun
-
 	def on_text(self, motion):
 		print "on_text default Element handler:", self, motion
 	
@@ -97,17 +92,21 @@ class Element(pyglet.event.EventDispatcher):
 		self.code.caret.on_text_motion(motion, select)
 
 	def on_key_press(self, symbol, modifiers):
-		print "on_key_press default Element handler:",  (pyglet.window.key.modifiers_string(modifiers),
-							pyglet.window.key.symbol_string(symbol))
+		print "on_key_press default Element handler:", self,(
+			pyglet.window.key.modifiers_string(modifiers),
+			pyglet.window.key.symbol_string(symbol))
 
 		
 	def on_mouse_press(self, x, y, button, modifiers):
-		print "on_mouse_press default Element handler:", x,y,button,modifiers
+		print "on_mouse_press default Element handler:", (self,
+			x,y,button,modifiers)
 
 	def is_caret_on_me(self):
 		return active == self
 
-
+	def register_event_types(self, types):
+		for item in types.split(', '):
+			self.register_event_type(item)
 
 
 
@@ -175,7 +174,7 @@ class Widget(Element):
 class TextWidget(Widget):
 	def __init__(self, text):
 		super(TextWidget, self).__init__()
-		self.register_event_type('on_edit')
+		self.register_event_types('on_edit, on_widget_text_motion')
 		self.color = (150,150,255,255)
 		self.text = text
 		
@@ -183,24 +182,30 @@ class TextWidget(Widget):
 		if caret.get_style("element") != self:
 			#raise Exception("caret isnt at me, dont ask me for position")
 			return len(self.text)
+		print "AA", caret.get_style("position")
 		return caret.get_style("position")
 
 	def move_caret(self):
 		if caret.get_style("element") != self:
 			return
 
-		print "caret.position: ", caret.position
+#		print "caret.position: ", caret.position
 		
 		value = self.closure_move_by 
-		print "move by: ", value
+#		print "move by: ", value
 
 		if 	value < 0 and caret.position == 0:
 			value = 0
 		if value > 0 and caret.position == len(document.document.text):
 			value = 0
 
-		print "move by: ", value
 		caret.position = caret.position + value
+		print self, "move by: ", value, " to ",caret.position
+		
+		document.remove_handler('post_render', self.move_caret)
+		
+		
+		
 		
 	def render(self):
 		for position, letter in enumerate(self.text):
@@ -214,9 +219,10 @@ class TextWidget(Widget):
 		self.closure_move_by = len(text)
 		document.push_handlers(post_render = self.move_caret)
 
-		print self.text, len(self.text)
+#		print self.text, len(self.text)
 		self.dispatch_event('on_edit', self)
 		print "WOOOOTA"
+		return True
 	
 	def on_text_motion(self, motion, select=False):
 		if motion == pyglet.window.key.MOTION_BACKSPACE:
@@ -225,43 +231,8 @@ class TextWidget(Widget):
 				self.text = self.text[:position-1]+self.text[position:]
 			self.dispatch_event('on_edit', self)
 			return True
-
-
-
-
-
-
-class MenuWidget(Widget):
-	def __init__(self, items):
-		super(MenuWidget, self).__init__()
-		[self.register_event_type(i) for i in ['on_select', 'on_confirm', 'on_dismiss']]
-		self.color = (100,230,50,255)
-		self.items = items
-		self.sel = 0
-
-	def on_text_motion(self, motion, select=False):
-		print "~~~~~~~~~~~~~~~~~", motion
-		
-		if motion == pyglet.window.key.MOTION_DOWN:
-			self.sel += 1
-			self.dispatch_event('on_select', self)
-		if motion == pyglet.window.key.MOTION_UP:
-			self.sel -= 1
-			self.dispatch_event('on_select', self)
-			
-	def render(self):
-		for i, item in enumerate(self.items):
-			newline().render(self)
-			document.append(item, self, {'color':(255,100,100,255)} if self.sel == i else {})
-
-		newline().render(self)
-
-			
-		
-			
-	
-	
-
+		else:
+			return self.dispatch_event('on_widget_text_motion', self, motion, select)
 
 
 
@@ -303,7 +274,6 @@ class AstNode(Element):
 	def __init__(self):
 		super(AstNode, self).__init__()
 		self.color = (0,255,0,255)
-		self.menu = False
 
 class TextNode(AstNode):
 	def __init__(self, value):
@@ -312,49 +282,6 @@ class TextNode(AstNode):
 	def render(self):
 		self.widget.render()
 
-class PlaceholderNode(AstNode):
-	def __init__(self, name="placeholder", type=None, default="None", example="None"):
-		super(PlaceholderNode, self).__init__()
-		self.default = default
-		self.example = example
-		self.set('widget', TextWidget(""))
-		self.widget.push_handlers(on_edit=self.on_widget_edit)
-	
-	def on_widget_edit(self, widget):
-		print widget
-		if widget == self.widget:
-			text = self.widget.text
-			print text
-			self.menu = MenuWidget([text, text, text, text])
-	
-	def render(self):
-		self.widget.render()
-
-		d = (" (default:"+self.default+")") if self.default else ""
-		e = (" (for example:"+self.example+")") if self.example else ""
-		x = ""
-		if self.is_caret_on_me():
-			x = d + e
-
-		backtext = "<<" + x + ">>"
-		backtext = backtext[len(self.widget.text):]
-		
-		document.append(backtext, self, {'color':(130,130,130,255)})
-		
-		startpos = len(document.document.text) - len(backtext) - len(self.widget.text)
-		
-		if self.menu:
-			self.menu.render()
-			
-	#def replace(self, replacement):
-	#	parent.children[self.name] = replacement...
-	
-	def on_text(self, text):
-		self.widget.on_text(text)
-	
-	def on_text_motion(self, motion, select=False):
-		self.widget.on_text_motion(motion, select)
-	
 
 class TemplatedNode(AstNode):
 	def __init__(self):
@@ -523,10 +450,108 @@ class CallNode(TemplatedNode):
 		self.target
 """		
 		
+
+
+
+
+
+
+
+
+
+
+
+class ShadowedTextWidget(TextWidget):
+
+	def __init__(self, text, shadow):
+
+		super(ShadowedTextWidget, self).__init__(text)
+		self.shadow = shadow
+
+	def render(self):
+
+		document.append(self.text, self, {'color':self.color})
+		document.append(self.shadow[len(self.text):], self, {'color':(130,130,130,255)})
+
+	def len(self):
+		return len(self.text+self.shadow[len(self.text)])
 		
 
 
-#root = PlaceholderNode()
+class MenuWidget(Widget):
+	def __init__(self, items):
+		super(MenuWidget, self).__init__()
+		[self.register_event_type(i) for i in ['on_click']]
+		self.color = (100,230,50,255)
+		self.items = items
+		self.sel = -1
+
+	def render(self):
+		for i, item in enumerate(self.items):
+			newline().render(self)
+			document.append(item, self, 
+				{'color':(255,100,100,255)} if self.sel == i else {})
+
+		newline().render(self)
+		
+	
+
+		
+
+class PlaceholderNode(AstNode):
+	def __init__(self, name="placeholder", type=None, default="None", example="None"):
+		super(PlaceholderNode, self).__init__()
+		self.default = default
+		self.example = example
+		self.set('textbox', ShadowedTextWidget("", "<<>>"))
+		self.set('menu', MenuWidget([]))
+		self.textbox.push_handlers(
+			on_edit=self.on_widget_edit,
+			on_widget_text_motion=self.on_widget_text_motion)
+
+#		print self," items:"
+#		for name, item in self.__dict__.iteritems():
+#			print " ",name, ": ", item
+	
+	
+	def on_widget_edit(self, widget):
+		if widget == self.textbox:
+			text = self.textbox.text
+			self.menu.items = [text, text, text, text]
+	
+	def render(self):
+		d = (" (default:"+self.default+")") if self.default else ""
+		e = (" (for example:"+self.example+")") if self.example else ""
+		x = ""
+		if active == self.textbox:
+			x = d + e
+
+		self.textbox.shadow = "<<" + x + ">>"
+
+		self.textbox.render()
+#		print self.menu.items
+		self.menu.render()
+			
+	
+	def on_widget_text_motion(self, widget, motion, select):
+		print "~~~~~~~~~~~~~~~~~", motion
+		
+		if motion == pyglet.window.key.MOTION_DOWN:
+			self.menu.sel += 1
+		if motion == pyglet.window.key.MOTION_UP:
+			self.menu.sel -= 1
+			
+	#def replace(self, replacement):
+	#	parent.children[self.name] = replacement...
+	
+	
+
+
+
+
+
+
+
 
 root = RootNode(StatementsNode([PlaceholderNode(), 
 									AsignmentNode(TextNode("a"), NumberNode(1)),

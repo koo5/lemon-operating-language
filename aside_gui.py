@@ -38,9 +38,11 @@ class CodeArea(ast.Document):
 
 	def rerender(self):
 		ast.active = self.on()
-		#we're gonna need it while rendering, and we're not gonna have it
+		#we're gonna need it while rendering, and we're not gonna have it, 
+		#because document.text is set to "" at the beginning
 	
-		pos = self.caret.position
+		print self.caret.position
+
 		self.layout.begin_update()
 		self.document.text = ""
 		self.root.render()
@@ -49,7 +51,12 @@ class CodeArea(ast.Document):
 #			dict(bold=False,italic=False,font_name="monospace", font_size=26))
 			
 		self.layout.end_update()
+
+		print self.caret.position
+
 		self.dispatch_event('post_render')
+
+		print self.caret.position
 
 	def resize(self, width, height):
 		self.layout.width = width
