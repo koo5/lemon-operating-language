@@ -33,15 +33,15 @@ class Document(pyglet.event.EventDispatcher):
 			
 	def append(self, text, element, attributes={}):
 		a = {'element':element, 'color':element.color}
-		a.update(attributes)
-		if self.do_indent:
+		a.update(attributes) #update merges attributes into a
+		if self.do_indent: #we appended a newline earlier
 			self.do_indent = False
 			self._append(self.indent_spaces(), a)
 		self.do_indent = (text == "\n")
 		self._append(text, a)
 			
 	def indent_spaces(self):
-		return " " * self.indent_length * self.indentation
+		return "|" + "<-->" * self.indentation
 
 
 
@@ -84,15 +84,19 @@ class Element(pyglet.event.EventDispatcher):
 				print item.__repr__()
 			document.dedent()
 
-	def on_text(self, motion):
-		print "on_text default Element handler:", self, motion
+	def on_text(self, text):
+		print "on_text default:", self, text
 	
 	def on_text_motion(self, motion, select=False):
-		print "on_text_motion default Element handler:", self, motion, select, " passing to caret"
-		self.code.caret.on_text_motion(motion, select)
+		print "on_text_motion default:", self, (
+			pyglet.window.key.motion_string(motion),
+			select)
+#		print " passing to caret"
+#		caret.on_text_motion(motion, select)
+		return False
 
 	def on_key_press(self, symbol, modifiers):
-		print "on_key_press default Element handler:", self,(
+		print "on_key_press default:", self,(
 			pyglet.window.key.modifiers_string(modifiers),
 			pyglet.window.key.symbol_string(symbol))
 
@@ -182,7 +186,7 @@ class TextWidget(Widget):
 		if caret.get_style("element") != self:
 			#raise Exception("caret isnt at me, dont ask me for position")
 			return len(self.text)
-		print "AA", caret.get_style("position")
+#		print "AA", caret.get_style("position")
 		return caret.get_style("position")
 
 	def move_caret(self):
@@ -200,7 +204,7 @@ class TextWidget(Widget):
 			value = 0
 
 		caret.position = caret.position + value
-		print self, "move by: ", value, " to ",caret.position
+#		print self, "move by: ", value, " to ",caret.position
 		
 		document.remove_handler('post_render', self.move_caret)
 		
@@ -213,7 +217,7 @@ class TextWidget(Widget):
 	
 	def on_text(self, text):
 		pos = self.get_caret_position()
-		print "on_text pos: ", pos
+#		print "on_text pos: ", pos
 		self.text = self.text[:pos] + text + self.text[pos:]
 
 		self.closure_move_by = len(text)
@@ -221,18 +225,21 @@ class TextWidget(Widget):
 
 #		print self.text, len(self.text)
 		self.dispatch_event('on_edit', self)
-		print "WOOOOTA"
-		return True
+
 	
 	def on_text_motion(self, motion, select=False):
+		print "TextWidget on_text_motion"
 		if motion == pyglet.window.key.MOTION_BACKSPACE:
 			position = self.get_caret_position()
 			if position > 0:
 				self.text = self.text[:position-1]+self.text[position:]
 			self.dispatch_event('on_edit', self)
-			return True
 		else:
-			return self.dispatch_event('on_widget_text_motion', self, motion, select)
+			print "returning False"
+			return False
+
+		print "returning True"
+		return True
 
 
 
@@ -363,7 +370,6 @@ class StatementsNode(AstNode):
 	
 	def toggle_expanded(self):
 		self.expanded = not self.expanded
-		self.expand_collapse_button.text += "we need dirty flags or something to that effect"
 	
 
 	def clicked(self, item):
@@ -488,6 +494,7 @@ class MenuWidget(Widget):
 
 	def render(self):
 		for i, item in enumerate(self.items):
+			#we will need to shift this here
 			newline().render(self)
 			document.append(item, self, 
 				{'color':(255,100,100,255)} if self.sel == i else {})
@@ -534,7 +541,7 @@ class PlaceholderNode(AstNode):
 			
 	
 	def on_widget_text_motion(self, widget, motion, select):
-		print "~~~~~~~~~~~~~~~~~", motion
+#		print "~~~~~~~~~~~~~~~~~", motion
 		
 		if motion == pyglet.window.key.MOTION_DOWN:
 			self.menu.sel += 1

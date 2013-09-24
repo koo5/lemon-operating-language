@@ -32,31 +32,23 @@ class CodeArea(ast.Document):
 		ast.caret = self.caret = pyglet.text.caret.Caret(self.layout, self.batch, (255,0,0))
 		self.caret.position = 115
 
-		window.set_handlers(self.on_text, self.on_text_motion, self.on_key_press, self.on_mouse_press)
+		window.set_handlers(self.on_text, self.on_text_motion, self.on_key_press, self.on_mouse_press, self.caret.on_activate, self.caret.on_deactivate)
 
 		self.rerender()
 
 	def rerender(self):
+	
 		ast.active = self.on()
 		#we're gonna need it while rendering, and we're not gonna have it, 
 		#because document.text is set to "" at the beginning
 	
-		print self.caret.position
-
 		self.layout.begin_update()
 		self.document.text = ""
 		self.root.render()
-
-#		self.document.set_style(0, len(self.document.text),
-#			dict(bold=False,italic=False,font_name="monospace", font_size=26))
-			
+		#self.document.set_style(0, len(self.document.text),
+		#	dict(bold=False,italic=False,font_name="monospace", font_size=26))
 		self.layout.end_update()
-
-		print self.caret.position
-
 		self.dispatch_event('post_render')
-
-		print self.caret.position
 
 	def resize(self, width, height):
 		self.layout.width = width
@@ -70,7 +62,7 @@ class CodeArea(ast.Document):
 	def on(self, pos=None):
 		if pos == None:
 			pos = self.caret.position
-		print "pos: ",pos	
+#		print "pos: ",pos	
 		return self.document.get_style("element", pos)
 	
 	def on_text(self, text):
@@ -78,14 +70,10 @@ class CodeArea(ast.Document):
 		self.rerender()
 
 	def on_text_motion(self, motion):
-		print "ORANGE"
-		
-		res = self.on().on_text_motion(motion)
-		self.rerender()
-		return res
-	
-	def on_text_motion_select(self, motion):
-		self.on().on_text_motion_select(motion)
+		if not self.on().on_text_motion(motion):
+			print "default caret motion"
+			self.caret.on_text_motion(motion)
+			
 		self.rerender()
 	
 	def on_key_press(self, symbol, modifiers):
@@ -107,12 +95,13 @@ class Window(pyglet.window.Window):
 
 		self.set_icon(pyglet.image.load('icon32x32.png'))
 
-
 		self.batch = pyglet.graphics.Batch()
 		self.code = CodeArea(self.width, self.height, self.batch, self)
 		
-		self.test()
-		
+	def toggleFullscreen(self):
+		print "going fullscreen"
+		self.set_fullscreen(not self.fullscreen)
+
 	def on_key_press(self, key, modifiers):
 		if key == pyglet.window.key.F11:
 			self.toggleFullscreen()
@@ -128,28 +117,10 @@ class Window(pyglet.window.Window):
 		self.clear()
 		self.batch.draw()
 		
-	def test(self):
-		self.code.root.dump()
-	#	pyglet.clock.schedule_interval(self.test_1, 5)
-	#	pyglet.clock.schedule_interval(self.test_2, 2)
-	
-	def test_1(self, d):
-		self.code.on_mouse_press(3,372,1,16)
-
-	def test_2(self, d):
-		print self.code.root.statements.items[2].statements
-		self.code.root.statements.items[2].statements.toggle_expanded()
-		self.code.rerender()
-
-	def toggleFullscreen(self):
-		print "going fullscreen"
-		self.set_fullscreen(not self.fullscreen)
 		
 
 	
 window = Window()
 pyglet.app.run()
-
-
 
 
