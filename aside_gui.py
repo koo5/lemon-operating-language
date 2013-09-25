@@ -17,6 +17,9 @@ class CodeArea(ast.Document):
 		self.window = window
 		self.batch = batch
 		
+		#todo: switch to formatted_from_text, implement functions 
+		#dealing with the text if necessary
+		
 		self.document = pyglet.text.document.FormattedDocument("ABC")
 		#		self.document.set_style(0, len(self.document.text),
 		#			dict(color=(255,255,255,255)))
@@ -37,17 +40,19 @@ class CodeArea(ast.Document):
 		self.rerender()
 
 	def rerender(self):
-	
+		self.do_indent = True
 		ast.active = self.on()
 		#we're gonna need it while rendering, and we're not gonna have it, 
 		#because document.text is set to "" at the beginning
 	
+		line = self.caret.line
 		self.layout.begin_update()
 		self.document.text = ""
 		self.root.render()
 		#self.document.set_style(0, len(self.document.text),
 		#	dict(bold=False,italic=False,font_name="monospace", font_size=26))
 		self.layout.end_update()
+		self.caret.line = line
 		self.dispatch_event('post_render')
 
 	def resize(self, width, height):
@@ -66,25 +71,22 @@ class CodeArea(ast.Document):
 		return self.document.get_style("element", pos)
 	
 	def on_text(self, text):
-		self.on().on_text(text)
+		self.on().dispatch_event('on_text', text)
 		self.rerender()
 
 	def on_text_motion(self, motion):
-		if not self.on().on_text_motion(motion):
-			print "default caret motion"
-			self.caret.on_text_motion(motion)
-			
+		self.on().dispatch_event('on_text_motion', motion)
 		self.rerender()
 	
 	def on_key_press(self, symbol, modifiers):
-		self.on().on_key_press(symbol, modifiers)
+		self.on().dispatch_event('on_key_press', symbol, modifiers)
 		self.rerender()
 
 	def on_mouse_press(self, x, y, button, modifiers):
 		pos = self.layout.get_position_from_point(x,y)
-		print "on_mouse_press", x, y, button, modifiers, pos
-		self.on(pos).on_mouse_press(x, y, button, modifiers)
+		self.on(pos).dispatch_event('on_mouse_press', x, y, button, modifiers)
 		self.rerender()
+		
 	
 
 class Window(pyglet.window.Window):
@@ -105,6 +107,7 @@ class Window(pyglet.window.Window):
 	def on_key_press(self, key, modifiers):
 		if key == pyglet.window.key.F11:
 			self.toggleFullscreen()
+			return True
 		else:
 			return super(Window, self).on_key_press(key, modifiers)
 		
@@ -113,7 +116,7 @@ class Window(pyglet.window.Window):
 		self.code.resize(width, height)
 
 	def on_draw(self):
-		pyglet.gl.glClearColor(0, 0, 0, 1)
+		pyglet.gl.glClearColor(0, 0.1, 0.2, 1)
 		self.clear()
 		self.batch.draw()
 		

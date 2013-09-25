@@ -2,28 +2,29 @@
 # -*- coding: utf-8 -*-
 
 
-"""
-todo: language syntax tree? (for menu)
-"""
 
 
 import sys
 import pyglet
 
 
+
+#give me those
 global document
 global caret
 global active
 
 
-"""
-subclass from Document, implement append and set aside_tree.document to an instance of it
-"""
 class Document(pyglet.event.EventDispatcher):
+	"""
+	subclass from Document,	implement append
+	and set aside_tree.document to an instance of it
+	"""
 	def __init__(self):
 		self.indentation = 0
 		self.do_indent = True
 		self.indent_length = 4
+		#for kicking the cursor around:
 		self.register_event_type('post_render')
 		
 	def indent(self):
@@ -33,15 +34,17 @@ class Document(pyglet.event.EventDispatcher):
 			
 	def append(self, text, element, attributes={}):
 		a = {'element':element, 'color':element.color}
-		a.update(attributes) #update merges attributes into a
-		if self.do_indent: #we appended a newline earlier
+		#update merges attributes into a
+		a.update(attributes)
+		#did we append a newline earlier?
+		if self.do_indent:   
 			self.do_indent = False
 			self._append(self.indent_spaces(), a)
 		self.do_indent = (text == "\n")
 		self._append(text, a)
 			
 	def indent_spaces(self):
-		return "|" + "<-->" * self.indentation
+		return self.indent_length*" " * self.indentation
 
 
 
@@ -57,6 +60,8 @@ class Element(pyglet.event.EventDispatcher):
 		self.color = (200,255,200,255)
 		self.children = {}
 		self.parent = None
+		self.register_event_types(
+		'on_edit, on_text, on_text_motion, on_key_press, on_mouse_press')
 	
 	def __getattr__(self, name):
 
@@ -86,24 +91,25 @@ class Element(pyglet.event.EventDispatcher):
 
 	def on_text(self, text):
 		print "on_text default:", self, text
+		return False
 	
 	def on_text_motion(self, motion, select=False):
 		print "on_text_motion default:", self, (
 			pyglet.window.key.motion_string(motion),
-			select)
-#		print " passing to caret"
-#		caret.on_text_motion(motion, select)
+			select), " passing to caret"
+		caret.on_text_motion(motion, select)
 		return False
 
 	def on_key_press(self, symbol, modifiers):
 		print "on_key_press default:", self,(
 			pyglet.window.key.modifiers_string(modifiers),
 			pyglet.window.key.symbol_string(symbol))
-
+		return False
 		
 	def on_mouse_press(self, x, y, button, modifiers):
-		print "on_mouse_press default Element handler:", (self,
+		print "on_mouse_press default:", self, (
 			x,y,button,modifiers)
+		return False
 
 	def is_caret_on_me(self):
 		return active == self
@@ -178,9 +184,13 @@ class Widget(Element):
 class TextWidget(Widget):
 	def __init__(self, text):
 		super(TextWidget, self).__init__()
-		self.register_event_types('on_edit, on_widget_text_motion')
+		self.register_event_types('on_edit')
+		self.push_handlers(
+			on_text_motion = self.on_textwidget_text_motion,
+			on_text = self.on_textwidget_text)
 		self.color = (150,150,255,255)
 		self.text = text
+		
 		
 	def get_caret_position(self):
 		if caret.get_style("element") != self:
@@ -215,27 +225,27 @@ class TextWidget(Widget):
 		for position, letter in enumerate(self.text):
 			document.append(self.text[position], self, {"position":position})
 	
-	def on_text(self, text):
+	def on_textwidget_text(self, text):
 		pos = self.get_caret_position()
-#		print "on_text pos: ", pos
+		print "on_text pos: ", pos
 		self.text = self.text[:pos] + text + self.text[pos:]
 
 		self.closure_move_by = len(text)
 		document.push_handlers(post_render = self.move_caret)
+		#not wise to move the caret in the middle of rerendering
 
 #		print self.text, len(self.text)
 		self.dispatch_event('on_edit', self)
 
 	
-	def on_text_motion(self, motion, select=False):
-		print "TextWidget on_text_motion"
+	def on_textwidget_text_motion(self, motion, select=False):
+#		print "TextWidget on_text_motion"
 		if motion == pyglet.window.key.MOTION_BACKSPACE:
 			position = self.get_caret_position()
 			if position > 0:
 				self.text = self.text[:position-1]+self.text[position:]
 			self.dispatch_event('on_edit', self)
 		else:
-			print "returning False"
 			return False
 
 		print "returning True"
@@ -456,6 +466,16 @@ class CallNode(TemplatedNode):
 		self.target
 """		
 		
+class UselessNode(TemplatedNode):
+	def __init__(self):
+		super(UselessNode,self).__init__()
+	
+class TodoNode(UselessNode):
+	def __init__(self):
+		super(UselessNode,self).__init__()
+	
+		self.templates = [template([t("#"), child("value")])]
+		self.text = "do it"
 
 
 
@@ -514,7 +534,9 @@ class PlaceholderNode(AstNode):
 		self.set('menu', MenuWidget([]))
 		self.textbox.push_handlers(
 			on_edit=self.on_widget_edit,
-			on_widget_text_motion=self.on_widget_text_motion)
+			on_text_motion=self.on_text_motion,
+			on_key_press=self.on_key_press
+			)
 
 #		print self," items:"
 #		for name, item in self.__dict__.iteritems():
@@ -529,9 +551,9 @@ class PlaceholderNode(AstNode):
 	def render(self):
 		d = (" (default:"+self.default+")") if self.default else ""
 		e = (" (for example:"+self.example+")") if self.example else ""
-		x = ""
-		if active == self.textbox:
-			x = d + e
+
+		x = d + e if active == self.textbox else ""
+
 
 		self.textbox.shadow = "<<" + x + ">>"
 
