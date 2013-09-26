@@ -1,8 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import pyglet
 import sys
+
+sys.path.insert(0, 'pyglet')
+
+import pyglet
 
 import aside_tree as ast
 
@@ -12,7 +15,7 @@ class CodeArea(ast.Document):
 		ast.Document.__init__(self)
 		ast.document = self
         
-		self.root = ast.root
+		ast.populate_root()
 		
 		self.window = window
 		self.batch = batch
@@ -48,11 +51,11 @@ class CodeArea(ast.Document):
 		line = self.caret.line
 		self.layout.begin_update()
 		self.document.text = ""
-		self.root.render()
+		ast.root.render()
 		#self.document.set_style(0, len(self.document.text),
 		#	dict(bold=False,italic=False,font_name="monospace", font_size=26))
 		self.layout.end_update()
-		self.caret.line = line
+		self.caret.line = min(line, self.layout.get_line_count()-1)
 		self.dispatch_event('post_render')
 
 	def resize(self, width, height):

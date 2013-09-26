@@ -190,7 +190,8 @@ class TextWidget(Widget):
 			on_text = self.on_textwidget_text)
 		self.color = (150,150,255,255)
 		self.text = text
-		
+		document.push_handlers(post_render = self.move_caret)		
+		self.post_render_move_caret = 0
 		
 	def get_caret_position(self):
 		if caret.get_style("element") != self:
@@ -205,19 +206,17 @@ class TextWidget(Widget):
 
 #		print "caret.position: ", caret.position
 		
-		value = self.closure_move_by 
+		m = self.post_render_move_caret 
+		if m == 0: return
 #		print "move by: ", value
 
-		if 	value < 0 and caret.position == 0:
-			value = 0
-		if value > 0 and caret.position == len(document.document.text):
-			value = 0
+		if m < 0 and caret.position == 0:
+			m = 0
+		if m > 0 and caret.position == len(document.document.text):
+			m = 0
 
-		caret.position = caret.position + value
+		caret.position = caret.position + m
 #		print self, "move by: ", value, " to ",caret.position
-		
-		document.remove_handler('post_render', self.move_caret)
-		
 		
 		
 		
@@ -231,11 +230,12 @@ class TextWidget(Widget):
 		self.text = self.text[:pos] + text + self.text[pos:]
 
 		self.closure_move_by = len(text)
-		document.push_handlers(post_render = self.move_caret)
+
 		#not wise to move the caret in the middle of rerendering
 
 #		print self.text, len(self.text)
 		self.dispatch_event('on_edit', self)
+		return True
 
 	
 	def on_textwidget_text_motion(self, motion, select=False):
@@ -471,11 +471,11 @@ class UselessNode(TemplatedNode):
 		super(UselessNode,self).__init__()
 	
 class TodoNode(UselessNode):
-	def __init__(self):
-		super(UselessNode,self).__init__()
+	def __init__(self, text=""):
+		super(TodoNode,self).__init__()
 	
-		self.templates = [template([t("#"), child("value")])]
-		self.text = "do it"
+		self.templates = [template([t("todo: "), child("text")])]
+		self.set('text', TextWidget(text))
 
 
 
@@ -560,15 +560,15 @@ class PlaceholderNode(AstNode):
 		self.textbox.render()
 #		print self.menu.items
 		self.menu.render()
-			
-	
+
+
 	def on_widget_text_motion(self, widget, motion, select):
 #		print "~~~~~~~~~~~~~~~~~", motion
 		
-		if motion == pyglet.window.key.MOTION_DOWN:
-			self.menu.sel += 1
-		if motion == pyglet.window.key.MOTION_UP:
+		if motion == pyglet.window.key.F1:
 			self.menu.sel -= 1
+		if motion == pyglet.window.key.F2:
+			self.menu.sel += 1
 			
 	#def replace(self, replacement):
 	#	parent.children[self.name] = replacement...
@@ -581,16 +581,22 @@ class PlaceholderNode(AstNode):
 
 
 
+root = None
 
-root = RootNode(StatementsNode([PlaceholderNode(), 
-									AsignmentNode(TextNode("a"), NumberNode(1)),
-									AsignmentNode(TextNode("b"), NumberNode(5)), 
-									WhileNode(IsLessThanNode(VariableReadNode("a"), VariableReadNode("b")),
-									StatementsNode([
-									PrintNode(
-									VariableReadNode("a")), 
-									PlaceholderNode()])), 
-									PlaceholderNode()]))
+def populate_root():
+	global root
+	root = RootNode(StatementsNode([
+		PlaceholderNode(), 
+		AsignmentNode(TextNode("a"), NumberNode(1)),
+		AsignmentNode(TextNode("b"), NumberNode(5)), 
+		WhileNode(IsLessThanNode(VariableReadNode("a"), VariableReadNode("b")),
+		StatementsNode([
+			PrintNode(
+			VariableReadNode("a")), 
+			PlaceholderNode()])), 
+		PlaceholderNode(),
+		TodoNode("start looking into voice recognition:) (samson)")
+		]))
 
 
 """
