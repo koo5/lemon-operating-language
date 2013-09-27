@@ -52,8 +52,8 @@ class CodeArea(ast.Document):
 		self.layout.begin_update()
 		self.document.text = ""
 		ast.root.render()
-		#self.document.set_style(0, len(self.document.text),
-		#	dict(bold=False,italic=False,font_name="monospace", font_size=26))
+		self.document.set_style(0, len(self.document.text),
+			dict(bold=False,italic=False,font_name="monospace", font_size=ast.root.startup_setting_font_size.value))
 		self.layout.end_update()
 		self.caret.line = min(line, self.layout.get_line_count()-1)
 		self.dispatch_event('post_render')
@@ -95,7 +95,7 @@ class CodeArea(ast.Document):
 class Window(pyglet.window.Window):
 
 	def __init__(self, *args, **kwargs):
-		super(Window, self).__init__(640, 400, caption='lemon party',
+		super(Window, self).__init__(440, 400, caption='lemon party',
 				resizable=True)
 
 		self.set_icon(pyglet.image.load('icon32x32.png'))

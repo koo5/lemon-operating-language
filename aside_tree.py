@@ -26,6 +26,7 @@ class Document(pyglet.event.EventDispatcher):
 		self.indent_length = 4
 		#for kicking the cursor around:
 		self.register_event_type('post_render')
+		self.positions = {}
 		
 	def indent(self):
 		self.indentation += 1
@@ -33,6 +34,8 @@ class Document(pyglet.event.EventDispatcher):
 		self.indentation -= 1
 			
 	def append(self, text, element, attributes={}):
+		if not self.positions.has_key(element):
+			self.positions[element] = caret.position
 		a = {'element':element, 'color':element.color}
 		#update merges attributes into a
 		a.update(attributes)
@@ -130,25 +133,28 @@ class piece(Element):
 class t(piece):
 	def __init__(self, text):
 		self.text = text
-	def render(self, node):
+	def render(self, node, _=None):
 		document.append(self.text, node)
-
+class s(piece):
+	def render(self, node, lastitem):
+		document.append(" ", node.children[lastitem.name])
+	
 class newline(piece):
-	def render(self, node):
+	def render(self, node, _=None):
 		document.append("\n" , node)#
 
 class indent(piece):
-	def render(self, node):
+	def render(self, node, _=None):
 		document.indent()
 
 class dedent(piece):
-	def render(self, node):
+	def render(self, node, _=None):
 		document.dedent()
 
 class child(piece):
 	def __init__(self, name):
 		self.name = name
-	def render(self, node):
+	def render(self, node, _=None):
 		node.children[self.name].render()
 	
 
@@ -165,9 +171,12 @@ class template(object):
 	def render(self, node):
 		if not isinstance(document, Document):
 			raise Exception ("document is not Document")
+		#print self.items
+		lastitem = None #im going to hell for this lastitem thing
 		for item in self.items:
 			assert(isinstance(item, piece))
-			item.render(node)
+			item.render(node, lastitem)
+			lastitem = item
 
 
 
@@ -188,25 +197,32 @@ class TextWidget(Widget):
 		self.push_handlers(
 			on_text_motion = self.on_textwidget_text_motion,
 			on_text = self.on_textwidget_text)
+		document.push_handlers(
+			post_render = self.post_render_move_caret)
+		self.post_render_move_caret = 0
 		self.color = (150,150,255,255)
 		self.text = text
-		document.push_handlers(post_render = self.move_caret)		
-		self.post_render_move_caret = 0
 		
 	def get_caret_position(self):
-		if caret.get_style("element") != self:
+		"""
+		if (caret.get_style("element") != self) and (caret.get_style("piece") != self) 
 			#raise Exception("caret isnt at me, dont ask me for position")
-			return len(self.text)
-#		print "AA", caret.get_style("position")
+			return len(self.text)+1
+		print "AA", caret.get_style("position")
 		return caret.get_style("position")
+		"""
+		return caret.position - document.positions[self]
 
-	def move_caret(self):
+	def post_render_move_caret(self):
 		if caret.get_style("element") != self:
 			return
 
 #		print "caret.position: ", caret.position
 		
-		m = self.post_render_move_caret 
+		m = self.post_render_move_caret
+		self.post_render_move_caret = 0
+		#move amount Node?:)
+
 		if m == 0: return
 #		print "move by: ", value
 
@@ -227,13 +243,15 @@ class TextWidget(Widget):
 	def on_textwidget_text(self, text):
 		pos = self.get_caret_position()
 		print "on_text pos: ", pos
+
+		print self.text[:pos], text, self.text[pos:]
 		self.text = self.text[:pos] + text + self.text[pos:]
 
-		self.closure_move_by = len(text)
+		self.post_render_move_caret = len(text)
 
 		#not wise to move the caret in the middle of rerendering
 
-#		print self.text, len(self.text)
+		#print self.text, len(self.text)
 		self.dispatch_event('on_edit', self)
 		return True
 
@@ -245,6 +263,7 @@ class TextWidget(Widget):
 			if position > 0:
 				self.text = self.text[:position-1]+self.text[position:]
 			self.dispatch_event('on_edit', self)
+			self.post_render_move_caret = -1
 		else:
 			return False
 
@@ -350,12 +369,12 @@ store positions in attributes char by char
 
 
 
-class StatementsNode(AstNode):
+class ItemsNode(AstNode):
 	def __init__(self, items):
 		super(StatementsNode, self).__init__()
 		self.items = items
-		if not isinstance(items, list):
-			raise Exception("parameter to statements_node constructor is not a list")
+		if not isinstance(items, list) and not isinstance(items, dict):
+			raise Exception("parameter to StatementsNode constructor is not a list or dict")
 		self.set('expand_collapse_button', ButtonWidget())
 		self.expanded = False
 		self.toggle_expanded()
@@ -388,17 +407,18 @@ class StatementsNode(AstNode):
 
 
 
-class VariableReadNode(AstNode):
-	def __init__(self, name):
-		super(VariableReadNode, self).__init__()
-		self.name = TextWidget(name)
-	def render(self):
-		self.name.render()
 
 
 
-
-
+class DictNode(TemplatedNode):
+	def __init__(self):
+		super(DictNode, self).__init__()
+		self.items = {}
+		self.templates = [template([t("program by "),child("author"),s(),t("created on "),child("date_created"), newline(), indent(), child("statements"), dedent(), t("end.")]),
+						template([t("lemon operating language running on python"), t(sys.version.replace("\n", "")), t(" ready."), newline(),indent(), child("statements"), dedent()])]
+		self.set('statements', statements)
+		self.set('author', TextWidget(author))
+		self.set('date_created', TextWidget(date_created))
 
 
 
@@ -406,13 +426,19 @@ class VariableReadNode(AstNode):
 now onto real programming
 """
 
+class VariableReadNode(AstNode):
+	def __init__(self, name):
+		super(VariableReadNode, self).__init__()
+		self.name = TextWidget(name)
+	def render(self):
+		self.name.render()
 
 class RootNode(TemplatedNode):
 	def __init__(self, statements, author="banana", date_created="1.1.1.1111"):
 		super(RootNode, self).__init__()
 		assert isinstance(statements, StatementsNode)
 
-		self.templates = [template([t("program by "),child("author"), t(" created on "), child("date_created"), newline(), indent(), child("statements"), dedent(), t("end.")]),
+		self.templates = [template([t("program by "),child("author"),s(),t("created on "),child("date_created"), newline(), indent(), child("statements"), dedent(), t("end.")]),
 						template([t("lemon operating language running on python"), t(sys.version.replace("\n", "")), t(" ready."), newline(),indent(), child("statements"), dedent()])]
 		self.set('statements', statements)
 		self.set('author', TextWidget(author))
