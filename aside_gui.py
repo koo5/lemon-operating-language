@@ -7,10 +7,14 @@ import sys
 sys.path.insert(0, 'pyglet')
 import pyglet
 
-import document
 import aside
 from aside import *
 import settings
+
+
+
+
+
 
 def test_stuff():
 	return Dict((
@@ -65,39 +69,74 @@ def test_stuff():
 			)
 
 
-class CodeArea(document.Document):
 
-	def __init__(self, width, height, batch, window):
-		document.Document.__init__(self)
-		aside.set_document(self)
-		
-		self.root = test_stuff()
-		#self.root.settings.fullscreen.push_handlers(on_change = self.on_settings_change)
-		
-		self.window = window
-		self.batch = batch
-		
+
+
+
+
+class Window(pyglet.window.Window):
+	def __init__(self, *args, **kwargs):
+		super(Window, self).__init__(440, 400, caption='lemon party',
+				resizable=True)
+		self.set_icon(pyglet.image.load('icon32x32.png'))
+
+		self.batch = pyglet.graphics.Batch()
 		self.document = pyglet.text.document.FormattedDocument("")
 		self.layout = pyglet.text.layout.IncrementalTextLayout(
-					self.document, width-4, height-4, multiline=True, batch=batch)
-
+					self.document, self.width-4, self.height-4,
+					multiline=True, batch=self.batch)
 		self.layout.x = 2
 		self.layout.y = 2
-
 		self.caret = pyglet.text.caret.Caret(self.layout, self.batch, (255,0,0))
-		self.caret.position = 115
+		#self.caret.position = 115
 
-		window.set_handlers(self.on_text, self.on_text_motion, self.on_key_press, self.on_mouse_press, self.caret.on_activate, self.caret.on_deactivate)
+		self.set_handlers(self.caret.on_activate, self.caret.on_deactivate)
+
+		self.indentation = 0
+		self.indent_length = 4
+		self.register_event_type('post_render')
+
+		aside.set_document(self)
+		self.root = test_stuff()
+		self.root.settings.fullscreen.push_handlers(on_change = self.on_settings_change)
 
 		self.rerender()
 
+	def indent(self):
+		self.indentation += 1
+	def dedent(self):
+		self.indentation -= 1
+			
+	def append(self, text, element, attributes={}):
+		if not self.positions.has_key(element):
+			self.positions[element] = self.caret.position
+		a = {'element':element, 'color':element.color}
+		#update merges attributes into a
+		a.update(attributes)
+		#did we append a newline earlier?
+		if self.do_indent:   
+			self.do_indent = False
+			self._append(self.indent_spaces(), a)
+		self.do_indent = (text == "\n")
+		self._append(text, a)
+			
+	def indent_spaces(self):
+		return self.indent_length*" " * self.indentation
+
+	def newline(self, element):
+		self.append("\n", element)
+
 	def on_settings_change(self, setting):
+		print setting
 		if setting == self.root.settings.fullscreen:
-			window.set_fullscreen(self.root.settings.fullscreen.value)
+			window.toggle_fullscreen()
 
 	def rerender(self):
 		self.do_indent = True
+		self.positions = {}
 		self.active = self.on()
+		self.caret_position = self.caret.position
+		print self.caret.position
 		#we're gonna need it while rendering, and we're not gonna have it, 
 		#because document.text is set to "" at the beginning
 	
@@ -132,12 +171,26 @@ class CodeArea(document.Document):
 		self.rerender()
 
 	def on_text_motion(self, motion):
-		self.on().dispatch_event('on_text_motion', motion)
+		if not self.on().dispatch_event('on_text_motion', motion):
+			if motion == pyglet.window.key.MOTION_PREVIOUS_PAGE:
+				for i in range(0,10):
+					self.caret.on_text_motion(pyglet.window.key.MOTION_UP)
+			elif motion == pyglet.window.key.MOTION_NEXT_PAGE:
+				for i in range(0,10):
+					self.caret.on_text_motion(pyglet.window.key.MOTION_DOWN)
+			else:
+				print "passing to caret"
+				self.caret.on_text_motion(motion)
 		self.rerender()
+
 	
-	def on_key_press(self, symbol, modifiers):
-		self.on().dispatch_event('on_key_press', symbol, modifiers)
-		self.rerender()
+	def on_key_press(self, key, modifiers):
+		if key == pyglet.window.key.F11:
+			self.toggleFullscreen()
+		else:
+			super(Window, self).on_key_press(key, modifiers)
+			#self.on().dispatch_event('on_key_press', key, modifiers)
+			#self.rerender()
 
 	def on_mouse_press(self, x, y, button, modifiers):
 		pos = self.layout.get_position_from_point(x,y)
@@ -146,31 +199,9 @@ class CodeArea(document.Document):
 		
 	
 
-class Window(pyglet.window.Window):
-
-	def __init__(self, *args, **kwargs):
-		super(Window, self).__init__(440, 400, caption='lemon party',
-				resizable=True)
-
-		self.set_icon(pyglet.image.load('icon32x32.png'))
-
-		self.batch = pyglet.graphics.Batch()
-		self.code = CodeArea(self.width, self.height, self.batch, self)
-		
-	def toggleFullscreen(self):
-		print "going fullscreen"
+	def toggle_fullscreen(self):
+		print "!fullscreen"
 		self.set_fullscreen(not self.fullscreen)
-
-	def on_key_press(self, key, modifiers):
-		if key == pyglet.window.key.F11:
-			self.toggleFullscreen()
-			return True
-		else:
-			return super(Window, self).on_key_press(key, modifiers)
-		
-	def on_resize(self, width, height):
-		super(Window, self).on_resize(width, height)
-		self.code.resize(width, height)
 
 	def on_draw(self):
 		pyglet.gl.glClearColor(0, 0.1, 0.2, 1)

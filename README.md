@@ -54,7 +54,6 @@ functions: depend on templates?
 how many other features can be handled by function calls?
 
 variables : 
----
 theres some figuring out of static vs dynamic scope: http://en.wikipedia.org/wiki/Scope_(computer_science)
 nodes that reference variables should probably use both names and object references to the declaring nodes
 upon loading or entering, can optionally use reference by name, when refactoring, use object reference....
@@ -75,3 +74,15 @@ or anywhere..
 license
 ===
 still dunno how to license this
+
+
+
+
+
+
+events
+===
+document emits post_render
+not wise to move the caret in the middle of or before rerendering
+document.push_handlers(post_render = self.post_render_move_caret)
+

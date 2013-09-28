@@ -24,10 +24,10 @@ class Fullscreen(Setting):
 		super(Fullscreen, self).__init__()
 		self.templates = [template([child("widget")])]
 		self.set('widget', widgets.Toggle(False))
-		self.register_event_types("on_widget_edit")
-
+		self.widget.push_handlers(on_edit = self.on_widget_edit)
 	def on_widget_edit(self, widget):
-		self.dispatch_event('on_change')	
+		print "aaa"
+		self.dispatch_event('on_change', self)
 
 	@property
 	def value(self):

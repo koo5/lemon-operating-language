@@ -12,9 +12,6 @@ class Text(Widget):
 	def __init__(self, text):
 		super(Text, self).__init__()
 		self.register_event_types('on_edit')
-		self.push_handlers(
-			on_text_motion = self.on_textwidget_text_motion,
-			on_text = self.on_textwidget_text)
 		document.push_handlers(
 			post_render = self.post_render_move_caret)
 		self.post_render_move_caret = 0
@@ -28,43 +25,31 @@ class Text(Widget):
 		print "AA", document.caret.get_style("position")
 		return document.caret.get_style("position")
 		"""
-		return document.caret.position - document.positions[self]
+		print document.caret_position, "-", document.positions[self]
+		return document.caret_position - document.positions[self]
 
 	def post_render_move_caret(self):
-		if document.caret.get_style("element") != self:
-			return
-
+#		if document.caret.get_style("element") != self:
+#			return
 #		print "document.caret.position: ", document.caret.position
-		
-		m = self.post_render_move_caret
-		self.post_render_move_caret = 0
-		#move amount Node?:)
-
-		if m == 0: return
+		#CarryNode?:)
 #		print "move by: ", value
-
-		if m < 0 and document.caret.position == 0:
-			m = 0
-		if m > 0 and document.caret.position == len(document.document.text):
-			m = 0
-
-		document.caret.position = document.caret.position + m
 #		print self, "move by: ", value, " to ",document.caret.position
-		
-		
+		if 0 < document.caret.position + self.post_render_move_caret < len(document.document.text) + 1:
+			document.caret.position = document.caret.position + self.post_render_move_caret
+		self.post_render_move_caret = 0
 		
 	def render(self):
 		document.append(self.text, self)
 	
-	def on_textwidget_text(self, text):
+	def on_text(self, text):
 		pos = self.get_caret_position()
-		print "on_text pos: ", pos
+		print "on_text, pos: ", pos
 
-		print self.text[:pos], text, self.text[pos:]
+		#print self.text[:pos], text, self.text[pos:]
 		self.text = self.text[:pos] + text + self.text[pos:]
 
 		self.post_render_move_caret = len(text)
-
 		#not wise to move the caret in the middle of rerendering
 
 		#print self.text, len(self.text)
@@ -72,8 +57,8 @@ class Text(Widget):
 		return True
 
 	
-	def on_textwidget_text_motion(self, motion, select=False):
-#		print "TextWidget on_text_motion"
+	def on_text_motion(self, motion, select=False):
+		#print "TextWidget on_text_motion"
 		if motion == pyglet.window.key.MOTION_BACKSPACE:
 			position = self.get_caret_position()
 			if position > 0:
@@ -82,8 +67,6 @@ class Text(Widget):
 			self.post_render_move_caret = -1
 		else:
 			return False
-
-		print "returning True"
 		return True
 
 
@@ -135,9 +118,9 @@ class Button(Widget):
 	def on_mouse_press(self, x, y, button, modifiers):
 		#print "button clicked"
 		self.dispatch_event('on_click', self)
-	def on_key_press(self, symbol, modifiers):
-		if symbol == pyglet.window.key.RETURN:
-			print "button pressed"
+	def on_text(self, text):
+		print "button pressed",text,"..."
+		if text == "\r":
 			self.dispatch_event('on_click', self)
 	def render(self):
 		document.append(self.text, self)
@@ -174,7 +157,7 @@ class Toggle(Widget):
 		return "checked" if self.value else "unchecked"
 	def on_mouse_press(self, x, y, button, modifiers):
 		self.value = not self.value
-		self.dispatch_event('on_edit')
+		self.dispatch_event('on_edit', self)
 		
 
 
