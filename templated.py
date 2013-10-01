@@ -8,7 +8,7 @@ class Program(Templated):
 		super(Program, self).__init__()
 		assert isinstance(statements, Statements)
 		self.sys=__import__("sys")
-		self.templates = [template([t("program by "),child("author"),s(),t("created on "),child("date_created"), newline(), child("statements"), t("end.")]),
+		self.templates = [template([t("program by "), child("author"),s(), t("created on "), child("date_created"), newline(), child("statements"), t("end.")]),
 						template([t("lemon operating language running on python"), t(self.sys.version.replace("\n", "")), t(" ready."), newline(),child("statements")])]
 		self.set('statements', statements)
 		self.set('author', widgets.Text(author))

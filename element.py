@@ -43,22 +43,6 @@ class Element(pyglet.event.EventDispatcher):
 		print "on_text_motion default:", self, (
 			pyglet.window.key.motion_string(motion),
 			select)
-		if motion == pyglet.window.key.MOTION_PREVIOUS_PAGE:
-			print "pgup"
-			for i in range(0,10):
-				document.caret.on_text_motion(pyglet.window.key.MOTION_UP)
-			return True
-
-		elif motion == pyglet.window.key.MOTION_NEXT_PAGE:
-			print "pgdn"
-			for i in range(0,10):
-				document.caret.on_text_motion(pyglet.window.key.MOTION_DOWN)
-			return True
-
-		else:
-			print "passing to caret"
-			document.caret.on_text_motion(motion, select)
-			return True
 		return False
 
 	def on_key_press(self, symbol, modifiers):

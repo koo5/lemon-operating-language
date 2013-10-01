@@ -109,7 +109,7 @@ class Window(pyglet.window.Window):
 			
 	def append(self, text, element, attributes={}):
 		if not self.positions.has_key(element):
-			self.positions[element] = self.caret.position
+			self.positions[element] = len(self.document.text)
 		a = {'element':element, 'color':element.color}
 		#update merges attributes into a
 		a.update(attributes)
@@ -151,9 +151,10 @@ class Window(pyglet.window.Window):
 		self.caret.line = min(line, self.layout.get_line_count()-1)
 		self.dispatch_event('post_render')
 
-	def resize(self, width, height):
-		self.layout.width = width
-		self.layout.height = height
+	def on_resize(self, width, height):
+		super(Window, self).on_resize(width, height)
+		self.layout.width = self.width - 4
+		self.layout.height = self.height - 4
 
 	def _append(self, text, attributes):
 		self.document.insert_text(len(self.document.text), text, attributes)

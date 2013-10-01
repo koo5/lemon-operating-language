@@ -104,8 +104,7 @@ class Placeholder(Node):
 		self.set('menu', widgets.Menu([]))
 		self.textbox.push_handlers(
 			on_edit=self.on_widget_edit,
-			on_text_motion=self.on_text_motion,
-			on_key_press=self.on_key_press
+			on_text=self.on_widget_text,
 			)
 
 #		print self," items:"
@@ -116,7 +115,7 @@ class Placeholder(Node):
 	def on_widget_edit(self, widget):
 		if widget == self.textbox:
 			text = self.textbox.text
-			self.menu.items = [text, text, text, text]
+			self.menu.items = document.language.
 	
 	def render(self):
 		d = (" (default:"+self.default+")") if self.default else ""
@@ -132,13 +131,13 @@ class Placeholder(Node):
 		self.menu.render()
 
 
-	def on_widget_text_motion(self, widget, motion, select):
-#		print "~~~~~~~~~~~~~~~~~", motion
-		
-		if motion == pyglet.window.key.F1:
+	def on_widget_text(self, text):
+		if text == "T":
 			self.menu.sel -= 1
-		if motion == pyglet.window.key.F2:
+			return True
+		if text == "N":
 			self.menu.sel += 1
+			return True
 			
 	#def replace(self, replacement):
 	#	parent.children[self.name] = replacement...

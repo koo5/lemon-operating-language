@@ -25,7 +25,9 @@ class Text(Widget):
 		print "AA", document.caret.get_style("position")
 		return document.caret.get_style("position")
 		"""
-		print document.caret_position, "-", document.positions[self]
+		print document.positions
+		
+		print self, document.caret_position, "-", document.positions[self]
 		return document.caret_position - document.positions[self]
 
 	def post_render_move_caret(self):
