@@ -115,7 +115,7 @@ class Placeholder(Node):
 	def on_widget_edit(self, widget):
 		if widget == self.textbox:
 			text = self.textbox.text
-			self.menu.items = document.language.
+#			self.menu.items = document.language.
 	
 	def render(self):
 		d = (" (default:"+self.default+")") if self.default else ""
@@ -132,6 +132,7 @@ class Placeholder(Node):
 
 
 	def on_widget_text(self, text):
+		#use just shifts?
 		if text == "T":
 			self.menu.sel -= 1
 			return True

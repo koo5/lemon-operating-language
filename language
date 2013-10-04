@@ -1,0 +1,36 @@
+menu(type, start):
+	
+	
+	variables, functions, types
+	
+	
+	placeholder type:
+		statement:
+			for, if, while, def, call, 
+			
+			
+			
+			asignment:
+				variables in scope:
+					for item above me:
+						 
+		
+			call:
+				functions in scope:
+					for item in program:
+						if item is defun:
+							+
+		
+		expression:
+			bracket, operators, functions with return types, literals, variables		
+
+
+
+def scope(item):
+	items = [i for i in walkup(item)]
+
+
+
+def walkup(item):
+	if isinstance(item.parent, List):
+		for i in range(item.parent.indexof(
