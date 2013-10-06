@@ -1,3 +1,6 @@
+import nodes, 
+
+"""
 menu(type, start):
 	
 	
@@ -33,4 +36,14 @@ def scope(item):
 
 def walkup(item):
 	if isinstance(item.parent, List):
-		for i in range(item.parent.indexof(
+		for i in range(item.parent.indexof(self, 
+
+"""
+
+
+def functions(program):
+	result = []
+	for top_level_item in program:
+		if isinstance(top_level_item, nodes.Defun):
+			result += top_level_item
+	return result

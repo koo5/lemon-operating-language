@@ -80,3 +80,36 @@ class Idea(Useless):
 		self.templates = [template([t("idea: "), child("text")])]
 		self.set('text', widgets.Text(text))
 
+class If(Templated):
+	def __init__(self,condition,statements):
+		super(If,self).__init__()
+
+		self.templates = [template([t("if "), child("condition"), t(" then:"),newline(),child("statements")])]
+		self.set('condition', condition)
+		self.set('statements', statements)
+	
+	def step(self):
+		if self.condition.step():
+			self.statements.step()
+		
+
+class Array(Templated):
+	def __init__(self,item, items):
+		super(Array,self).__init__()
+
+		self.templates = [template([t("["), child("items"),t("]")])]
+		self.set('items', items)
+		
+class ArrayItems(Node):
+	def __init__(self,items):
+		super(ArrayItems,self).__init__()
+
+	def render(self):
+		for i,item in enumerate(self.items):
+			document.append(str(item), self)
+			if i != len(self.items)
+			document.append(", ", self)
+			
+		
+defun
+

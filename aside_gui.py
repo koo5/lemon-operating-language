@@ -32,7 +32,12 @@ def test_stuff():
 						Print(
 							VariableRead("a")), #byname
 							Placeholder()])),
-					Placeholder()]), name="test1")])
+					Placeholder()]), name="test1"),
+					If(IsLessThan(VariableRead("a"), Number(4)),
+						Statements([Print("hi!\n")])),
+					For(VariableDeclaration("item")
+						
+				])
 			),(
 			"notes", List([
 				Todo("start looking into voice recognition (samson?)"),
