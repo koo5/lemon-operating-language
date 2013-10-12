@@ -71,10 +71,25 @@ rules - or here..
 or anywhere..
 
 
+
+
+
 license
 ===
-still dunno how to license this
+(first sketch:)
 
+share alike,
+free for:
+	noncommercial use,
+	companies under 8 users,
+	occasional use
+if youre not sure/feel like it should be free for you, you can use it for free until i spot you
+others: $5/user/year
+
+contributor agreement
+===
+you give me the right to charge for use (/exercise of other rights?) of your contribution
+you can ask for your fair share:)
 
 
 

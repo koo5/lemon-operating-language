@@ -3,10 +3,108 @@ from collections import OrderedDict
 import element
 import widgets
 
+
+
+
+
+class piece(element.Element):
+	pass
+
+class t(piece):
+	def __init__(self, text):
+		self.text = text
+	def render(self, node, _=None):
+		self.doc.append(self.text, node)
+class s(piece):
+	def render(self, node, lastitem):
+		self.doc.append(" ", node.children[lastitem.name])
+	
+class newline(piece):
+	def render(self, node, _=None):
+		self.doc.append("\n" , node)#
+
+class indent(piece):
+	def render(self, node, _=None):
+		self.doc.indent()
+
+class dedent(piece):
+	def render(self, node, _=None):
+		self.doc.dedent()
+
+class child(piece):
+	def __init__(self, name):
+		self.name = name
+	def render(self, node, _=None):
+		node.children[self.name].render()
+	
+
+
+
+
+
+
+
+
+class template(object):
+	def __init__(self, items):
+		self.items = items
+	def render(self, node):
+		#print self.items
+		lastitem = None #im going to hell for this lastitem thing
+		for item in self.items:
+			assert(isinstance(item, piece))
+			item.render(node, lastitem)
+			lastitem = item
+
+
+
+
+
+
+
 class Node(element.Element):
 	def __init__(self):
 		super(Node, self).__init__()
 		self.color = (0,255,0,255)
+	def program(self):
+		if isinstance(self, Program):
+			return self
+		else:
+			if self.parent != None:
+				return self.parent.program()
+			else:
+				print self, "has no parent"
+				return None
+
+
+class Templated(Node):
+	def __init__(self):
+		super(Templated, self).__init__()
+		self.template_index = 0
+	@property
+	def template(self):
+		return self.templates[self.template_index]
+	def render(self):
+		self.template.render(self)
+	def prev_template(self):
+		self.template_index  -= 1
+		if self.template_index < 0:
+			self.template_index = 0
+	def next_template(self):
+		self.template_index  += 1
+		if self.template_index == len(self.templates):
+			self.template_index = len(self.templates)-1
+	def on_key_press(self, key, modifiers):
+		if (pyglet.window.key.MOD_CTRL & modifiers) and (key == pyglet.window.key.UP):
+			self.prev_template()
+			print "prev"
+		if (pyglet.window.key.MOD_CTRL & modifiers) and (key == pyglet.window.key.DOWN):
+			self.next_template()
+			print "next"
+
+
+
+
 
 class Text(Node):
 	def __init__(self, value):
@@ -22,7 +120,7 @@ class Number(Node):
 		self.minus_button = widgets.Button()
 		self.plus_button = widgets.Button()
 	def render(self):
-		document.append(str(self.value), self)
+		self.doc.append(str(self.value), self)
 
 class Collapsible(Node):
 	def __init__(self, items):
@@ -34,14 +132,14 @@ class Collapsible(Node):
 	def render(self):
 		self.expand_collapse_button.text = (
 			("-" if self.expanded else "+") +
-			(" " * (document.indent_length - 1)))
+			(" " * (self.doc.indent_length - 1)))
 		self.expand_collapse_button.render()
-		document.indent()
+		self.doc.indent()
 		if self.expanded:
 			self.render_items()
 		else:
-			document.newline(self)
-		document.dedent()
+			self.doc.newline(self)
+		self.doc.dedent()
 	
 	def toggle(self):
 		self.expanded = not self.expanded
@@ -53,15 +151,18 @@ class Collapsible(Node):
 class Dict(Collapsible):
 	def __init__(self, *tuples):
 		super(Dict, self).__init__(OrderedDict(tuples))
+		for key, item in self.items.iteritems():
+			item.parent = self
+
 	def render_items(self):
 			for key, item in self.items.iteritems():
-				document.append(key+":", self)
+				self.doc.append(key+":", self)
 				if hasattr(item, "oneliner"):
-					document.append(" ", self)
+					self.doc.append(" ", self)
 				else:
-					document.append("\n", self)
+					self.doc.append("\n", self)
 				item.render()
-				document.newline(item)
+				self.doc.newline(item)
 	def __getattr__(self, name):
 		if self.items.has_key(name):
 			return self.items[name]
@@ -72,10 +173,19 @@ class List(Collapsible):
 	def __init__(self, items):
 		super(List, self).__init__(items)
 		assert(isinstance(items, list))
+		for item in self.items:
+			item.parent = self
+
 	def render_items(self):
 			for item in self.items:
 				item.render()
-				document.newline(item)
+				self.doc.newline(item)
+	def __getitem__(self, i):
+		if len(self.items) > i:
+			return self.items[i]
+		else:
+			return super(Dict, self).__getitem__(i)
+
 
 class CollapsibleText(Collapsible):
 	def __init__(self, value):
@@ -115,13 +225,13 @@ class Placeholder(Node):
 	def on_widget_edit(self, widget):
 		if widget == self.textbox:
 			text = self.textbox.text
-#			self.menu.items = document.language.
+			self.menu.items = self.doc.language.functions(self)
 	
 	def render(self):
 		d = (" (default:"+self.default+")") if self.default else ""
 		e = (" (for example:"+self.example+")") if self.example else ""
 
-		x = d + e if document.active == self.textbox else ""
+		x = d + e if self.doc.active == self.textbox else ""
 
 
 		self.textbox.shadow = "<<" + x + ">>"
@@ -150,10 +260,160 @@ class Clock(Node):
 		super(Node,self).__init__()
 		self.datetime = __import__("datetime")
 	def render(self):
-		document.append(str(self.datetime.datetime.now()), self)
+		self.doc.append(str(self.datetime.datetime.now()), self)
 
 
 
 
 
+class Program(Templated):
+	def __init__(self, statements, name="unnamed", author="banana", date_created="1.1.1.1111"):
+		super(Program, self).__init__()
+		assert isinstance(statements, Statements)
+		self.sys=__import__("sys")
+		self.templates = [template([t("program by "), child("author"),s(), t("created on "), child("date_created"), newline(), child("statements"), t("end.")]),
+						template([t("lemon operating language running on python"), t(self.sys.version.replace("\n", "")), t(" ready."), newline(),child("statements")])]
+		self.set('statements', statements)
+		self.set('author', widgets.Text(author))
+		self.set('date_created', widgets.Text(date_created))
 
+#	@property
+#	def uses(self):
+#		for i in self.statements.items:
+			
+
+class Templates(List):
+	def __init__(self,items):
+		super(Templates,self).__init__()
+
+
+class While(Templated):
+	def __init__(self,condition,statements):
+		super(While,self).__init__()
+
+		self.templates = [template([t("while "), child("condition"), t(" do:"),newline(),child("statements")]),
+		template([t("repeat if "), child("condition"), t(" is true:"),newline(),child("statements"),t("go back up..")])]
+		self.set('condition', condition)
+		self.set('statements', statements)
+
+
+class Asignment(Templated):
+	def __init__(self, left, right):
+		super(Asignment,self).__init__()
+		self.templates=[template([child("left"), t(" = "), child("right")]),
+				template([t("set "), child("left"), t(" to "), child("right")]),
+				template([t("have "), child("left"), t(" be "), child("right")])]
+		self.set('left', left)
+		self.set('right', right)
+		
+class IsLessThan(Templated):
+	def __init__(self, left, right):
+		super(IsLessThan,self).__init__()
+
+		self.templates=[template([child("left"), t(" < "), child("right")])]
+		self.set('left', left)
+		self.set('right', right)
+		
+
+class Print(Templated):
+	def __init__(self,value):
+		super(Print,self).__init__()
+	
+		self.templates = [template([t("print "), child("value")]),
+				template([t("say "), child("value")])]
+		self.set('value', value)
+
+"""
+#set backlight brightness to %{number}%
+self.templates = target.call_templates?
+class CallNode(TemplatedNode):
+	def __init__(self, target=):
+		super(CallNode,self).__init__()
+		self.target = target
+		self.arguments = arguments
+	def render(self):
+		self.target
+"""		
+		
+class Useless(Templated):
+	def __init__(self):
+		super(Useless,self).__init__()
+	
+class Todo(Useless):
+	def __init__(self, text="", priority = 1):
+		super(Todo,self).__init__()
+		if priority == 10:
+			self.color=(255,0,0,255)
+		self.templates = [template([t("todo: "), child("text")])]
+		self.set('text', widgets.Text(text))
+class Idea(Useless):
+	def __init__(self, text=""):
+		super(Idea,self).__init__()
+	
+		self.templates = [template([t("idea: "), child("text")])]
+		self.set('text', widgets.Text(text))
+
+class If(Templated):
+	def __init__(self,condition,statements):
+		super(If,self).__init__()
+
+		self.templates = [template([t("if "), child("condition"), t(" then:"),newline(),child("statements")])]
+		self.set('condition', condition)
+		self.set('statements', statements)
+	
+	def step(self):
+		if self.condition.step():
+			self.statements.step()
+		
+
+class Array(Templated):
+	def __init__(self,item, items):
+		super(Array,self).__init__()
+
+		self.templates = [template([t("["), child("items"),t("]")])]
+		self.set('items', items)
+		
+class ArrayItems(Node):
+	def __init__(self,items):
+		super(ArrayItems,self).__init__()
+
+	def render(self):
+		for i,item in enumerate(self.items):
+			self.doc.append(str(item), self)
+			if i != len(self.items):
+				self.doc.append(", ", self)
+			
+		
+class FunctionDefinition(Templated):
+	def __init__(self,signature,statements):
+		super(FunctionDefinition,self).__init__()
+
+		self.templates = [template([t("to "), child("signature"), t(":"),newline(),child("statements")])]
+		self.set('signature', signature)
+		self.set('statements', statements)
+
+def FunctionArgument(Templated):
+	def __init__(self,name,type):
+		super(FunctionArgument,self).__init__()
+
+		self.templates = [template([t("("),child("name"), t(" - "),child("type"),t(")"),])]
+		self.set('name', name)
+		self.set('type', type)
+
+	
+
+class FunctionSignature(Node):
+	def __init__(self,items):
+		super(FunctionSignature,self).__init__()
+		self.items = items
+	def render(self):
+		for item in self.items:
+			item.render()	
+
+	
+
+
+
+
+#child, parent -> sub, sup?
+#CarryNode?:)

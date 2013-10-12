@@ -1,4 +1,4 @@
-import nodes, 
+import nodes
 
 """
 menu(type, start):
@@ -41,9 +41,50 @@ def walkup(item):
 """
 
 
-def functions(program):
+def functions(node):
 	result = []
-	for top_level_item in program:
-		if isinstance(top_level_item, nodes.Defun):
-			result += top_level_item
+	program = node.program()
+	for item in program.statements.items: #walk top level statements
+		if isinstance(item, nodes.FunctionDefinition):
+			result += item
 	return result
+
+
+#Use(Module(
+
+
+constructs = [nodes.If]
+
+
+class While(Templated):
+	templates = [
+					template([t("while "), child("condition"), t(" do:"),newline(),child("statements")]),
+					template([t("repeat if "), child("condition"), t(" is true:"),newline(),child("statements"),t("go back up..")])
+				]
+
+	def __init__(self,condition,statements):
+		super(While,self).__init__()
+		self.set('condition', condition)
+		self.set('statements', statements)
+
+
+
+
+def templates(text):
+	for c in :
+		for template in c.templates:
+			for i in template:
+				if isinstance(i,t):
+
+
+
+for d in definitions visible by program:
+
+
+
+every program
+
+
+
+
+builtin library is visible by every program

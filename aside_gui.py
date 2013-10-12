@@ -1,15 +1,29 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from collections import OrderedDict
 
+
+from collections import OrderedDict
 import sys
 sys.path.insert(0, 'pyglet')
 import pyglet
 
-import aside
-from aside import *
+
+import element
+import nodes
+from nodes import *
+import widgets
 import settings
+import language
+
+
+
+
+
+
+
+
+
 
 
 
@@ -23,8 +37,31 @@ def test_stuff():
 				("fullscreen", settings.Fullscreen())
 				)
 			),(
+			"libraries", Dict(
+				("builtin", Program(Statements([
+					Print(Text("loading builtin[the library]")),
+					NodeDefinition(
+						signatures = 
+						[
+							[t("print "), child("value")]
+						]
+						#fuck it?
+				
+				
+				
+				
+					NodeDefinition(
+						signatures = [
+							[t("define node with templates "),
+							 child("templates")
+							
+					
+					
+			),(
 			"programs", List([
 				Program(Statements([
+					FunctionDefinition(
+						FunctionSignature([FunctionArgument
 					Placeholder(), 
 					Asignment(Text("a"), Number(1)),
 					Asignment(Text("b"), Number(5)), 
@@ -34,24 +71,24 @@ def test_stuff():
 							Placeholder()])),
 					Placeholder()]), name="test1"),
 					If(IsLessThan(VariableRead("a"), Number(4)),
-						Statements([Print("hi!\n")])),
-					For(VariableDeclaration("item")
+						Statements([Print(Text("hi!\n"))]))
+				#	For(VariableDeclaration("item")
 						
 				])
 			),(
 			"notes", List([
-				Todo("start looking into voice recognition (samson?)"),
+				Todo("""big themes: 
+voice recognition (samson?)
+eye tracking
+
+
+"""),
 				Todo("procrastinate more"),
 				CollapsibleText(
 					"""
-
-
 <AnkhMorporkian_> it's probably a bad idea to have newline as its own class. it'd be better to maintain it in the document class, since you have to have that anyways when you're using it.
 <AnkhMorporkian> i understand why the nodes handle their own rendering, but I don't see why simple text characters should be.
 <sirdancealot_> i wanted to have it uniform, to avoid special handling of str inside the template render
-
-
-
 					"""),
 
 				CollapsibleText(
@@ -79,6 +116,21 @@ def test_stuff():
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Window(pyglet.window.Window):
 	def __init__(self, *args, **kwargs):
 		super(Window, self).__init__(440, 400, caption='lemon party',
@@ -93,7 +145,6 @@ class Window(pyglet.window.Window):
 		self.layout.x = 2
 		self.layout.y = 2
 		self.caret = pyglet.text.caret.Caret(self.layout, self.batch, (255,0,0))
-		#self.caret.position = 115
 
 		self.set_handlers(self.caret.on_activate, self.caret.on_deactivate)
 
@@ -101,11 +152,14 @@ class Window(pyglet.window.Window):
 		self.indent_length = 4
 		self.register_event_type('post_render')
 
-		aside.set_document(self)
+		self.language = language
+		element.Element.doc = self
 		self.root = test_stuff()
 		self.root.settings.fullscreen.push_handlers(on_change = self.on_settings_change)
 
 		self.rerender()
+		
+		self.caret.position = self.root.programs[0].statements[0].textbox.position()
 
 	def indent(self):
 		self.indentation += 1
@@ -114,13 +168,13 @@ class Window(pyglet.window.Window):
 			
 	def append(self, text, element, attributes={}):
 		if not self.positions.has_key(element):
-			self.positions[element] = len(self.document.text)
+			self.positions[element] = len(self._document.text)
 		a = {'element':element, 'color':element.color}
 		#update merges attributes into a
 		a.update(attributes)
 		#did we append a newline earlier?
 		if self.do_indent:   
-			self.do_indent = False
+			#self.do_indent = False
 			self._append(self.indent_spaces(), a)
 		self.do_indent = (text == "\n")
 		self._append(text, a)
@@ -141,14 +195,20 @@ class Window(pyglet.window.Window):
 		self.positions = {}
 		self.active = self.on()
 		self.caret_position = self.caret.position
-		print self.caret.position
-		#we're gonna need it while rendering, and we're not gonna have it, 
-		#because document.text is set to "" at the beginning
-	
 		line = self.caret.line
 		self.layout.begin_update()
 		self.document.text = ""
+		
+		self._document = self.document
+		self._caret = self.caret
+		self.document = "nonono"
+		self.caret = "nonono"
+		
 		self.root.render()
+		
+		self.document = self._document
+		self.caret = self._caret
+		
 		self.document.set_style(0, len(self.document.text),
 			dict(bold=False,italic=False,font_name="monospace",
 			font_size=self.root.settings.font_size.value))
@@ -162,7 +222,7 @@ class Window(pyglet.window.Window):
 		self.layout.height = self.height - 4
 
 	def _append(self, text, attributes):
-		self.document.insert_text(len(self.document.text), text, attributes)
+		self._document.insert_text(len(self._document.text), text, attributes)
 #		sys.stdout.write(text)
 
 	
@@ -187,6 +247,8 @@ class Window(pyglet.window.Window):
 			else:
 				print "passing to caret"
 				self.caret.on_text_motion(motion)
+				print self.caret.position 
+				
 		self.rerender()
 
 	
@@ -215,9 +277,9 @@ class Window(pyglet.window.Window):
 		self.batch.draw()
 		
 		
-
-	
-window = Window()
-pyglet.app.run()
+print __name__
+if __name__ == "__main__":
+	window = Window()
+	pyglet.app.run()
 
 

@@ -1,7 +1,6 @@
 
 import widgets
 from nodes import *
-from templated_node import *
 
 class Setting(Templated):
 	def __init__(self):

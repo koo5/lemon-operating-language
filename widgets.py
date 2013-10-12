@@ -12,7 +12,7 @@ class Text(Widget):
 	def __init__(self, text):
 		super(Text, self).__init__()
 		self.register_event_types('on_edit')
-		document.push_handlers(
+		self.doc.push_handlers(
 			post_render = self.post_render_move_caret)
 		self.post_render_move_caret = 0
 		self.color = (150,150,255,255)
@@ -20,29 +20,23 @@ class Text(Widget):
 		
 	def get_caret_position(self):
 		"""
-		if (document.caret.get_style("element") != self) and (document.caret.get_style("piece") != self) 
+		if (self.doc.caret.get_style("element") != self) and (self.doc.caret.get_style("piece") != self) 
 			return len(self.text)+1
-		print "AA", document.caret.get_style("position")
-		return document.caret.get_style("position")
+		print "AA", self.doc.caret.get_style("position")
+		return self.doc.caret.get_style("position")
 		"""
-		print document.positions
+		print self.doc.positions
 		
-		print self, document.caret_position, "-", document.positions[self]
-		return document.caret_position - document.positions[self]
+		print self, self.doc.caret_position, "-", self.doc.positions[self]
+		return self.doc.caret_position - self.doc.positions[self]
 
 	def post_render_move_caret(self):
-#		if document.caret.get_style("element") != self:
-#			return
-#		print "document.caret.position: ", document.caret.position
-		#CarryNode?:)
-#		print "move by: ", value
-#		print self, "move by: ", value, " to ",document.caret.position
-		if 0 < document.caret.position + self.post_render_move_caret < len(document.document.text) + 1:
-			document.caret.position = document.caret.position + self.post_render_move_caret
+		if 0 < self.doc.caret.position + self.post_render_move_caret < len(self.doc.document.text) + 1:
+			self.doc.caret.position = self.doc.caret.position + self.post_render_move_caret
 		self.post_render_move_caret = 0
 		
 	def render(self):
-		document.append(self.text, self)
+		self.doc.append(self.text, self)
 	
 	def on_text(self, text):
 		pos = self.get_caret_position()
@@ -81,8 +75,8 @@ class ShadowedText(Text):
 
 	def render(self):
 
-		document.append(self.text, self, {'color':self.color})
-		document.append(self.shadow[len(self.text):], self, {'color':(130,130,130,255)})
+		self.doc.append(self.text, self, {'color':self.color})
+		self.doc.append(self.shadow[len(self.text):], self, {'color':(130,130,130,255)})
 
 	def len(self):
 		return len(self.text+self.shadow[len(self.text)])
@@ -100,11 +94,11 @@ class Menu(Widget):
 	def render(self):
 		for i, item in enumerate(self.items):
 			#we will need to shift this here
-			document.append("\n", self)
-			document.append(item, self, 
+			self.doc.append("\n", self)
+			self.doc.append(item, self, 
 				{'color':(255,100,100,255)} if self.sel == i else {})
 
-		document.append("\n", self)
+		self.doc.append("\n", self)
 		
 	
 
@@ -125,7 +119,7 @@ class Button(Widget):
 		if text == "\r":
 			self.dispatch_event('on_click', self)
 	def render(self):
-		document.append(self.text, self)
+		self.doc.append(self.text, self)
 	
 class Number(Text):
 	def __init__(self, text):
@@ -137,7 +131,7 @@ class Number(Text):
 		self.plus_button.push_handlers(on_click=self.on_widget_click)
 	def render(self):
 		self.minus_button.render()
-		document.append(self.text, self)
+		self.doc.append(self.text, self)
 		self.plus_button.render()
 	@property
 	def value(self):
@@ -153,7 +147,7 @@ class Toggle(Widget):
 		super(Toggle, self).__init__()
 		self.value = value
 	def render(self):
-		document.append(self.text, self)
+		self.doc.append(self.text, self)
 	@property
 	def text(self):
 		return "checked" if self.value else "unchecked"

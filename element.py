@@ -25,16 +25,6 @@ class Element(pyglet.event.EventDispatcher):
 				self.parent.children.values.index(self)
 			] = item
 
-	def dump(self):
-		document.append(self.__repr__(), self)
-		for item in self.children.itervalues():
-			document.indent()
-			if isinstance(item, Element):
-				item.dump()
-			else:
-				print item.__repr__()
-			document.dedent()
-
 	def on_text(self, text):
 		print "on_text default:", self, text
 		return False
@@ -63,3 +53,5 @@ class Element(pyglet.event.EventDispatcher):
 		for item in types.split(', '):
 			self.register_event_type(item)
 
+	def position(self):
+		return self.doc.positions[self]
