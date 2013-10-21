@@ -88,3 +88,13 @@ every program
 
 
 builtin library is visible by every program
+
+
+
+
+if module == builtin:
+	case function in:
+		if:
+		while:
+		defun:
+		

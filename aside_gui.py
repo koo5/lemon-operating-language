@@ -39,15 +39,16 @@ def test_stuff():
 			),(
 			"libraries", Dict(
 				("builtin", Program(Statements([
-					Print(Text("loading builtin[the library]")),
-					NodeDefinition(
-						signatures = 
+					Print(Text("loading builtin(the library)")),
+					Defun(
+						templates = 
 						[
 							[t("print "), child("value")]
 						]
 						#fuck it?
-				
-				
+					),
+					Defun(templates=[[child("x"), t(" is a kind of "), child("y")]]
+					Defun(templates=[[t(" get the type of "), child("y")]]
 				
 				
 					NodeDefinition(

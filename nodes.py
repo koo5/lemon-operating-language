@@ -415,5 +415,29 @@ class FunctionSignature(Node):
 
 
 
+
+#curent todo: add all nodes to the builtins module, with their templates:
+#python classes are in nodes.py, with same names
+#division?
+
+
+
+#why not provide template functionality in Node: this is developing towards other views alla larch, maybe dataflow, maybe some other stuff, so using the inheritance hierarchy for all that will make more sense. I will try to declare a hierarchy inside the l1 declarations in modules
+
+
+#start adding a knowledge base
+#brick is a kind of thing
+#brick 1 is a brick
+#brick1 is blue
+#every blue brick
+
+
+#possible todo: ditch pyglets text modules for our own system:
+#easier to make interaction glitch free
+#non text representations: pyglets embedded objects or this
+#is one format for one line enough, or do we need the full thing
+
+
+
 #child, parent -> sub, sup?
 #CarryNode?:)
