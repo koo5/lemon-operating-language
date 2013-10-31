@@ -1,4 +1,4 @@
-import nodes
+from nodes import *
 
 """
 menu(type, start):
@@ -38,7 +38,6 @@ def walkup(item):
 	if isinstance(item.parent, List):
 		for i in range(item.parent.indexof(self, 
 
-"""
 
 
 def functions(node):
@@ -98,3 +97,7 @@ if module == builtin:
 		while:
 		defun:
 		
+"""
+
+
+syntax = {'statements': [If, 
