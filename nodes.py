@@ -9,37 +9,20 @@ import widgets
 
 class piece(element.Element):
 	pass
-
+class s(piece):
+	pass	
+class newline(piece):
+	pass
+class indent(piece):
+	pass
+class dedent(piece):
+	pass
 class t(piece):
 	def __init__(self, text):
 		self.text = text
-	def render(self, node, _=None):
-		self.doc.append(self.text, node)
-class s(piece):
-	def render(self, node, lastitem):
-		self.doc.append(" ", node.children[lastitem.name])
-	
-class newline(piece):
-	def render(self, node, _=None):
-		self.doc.append("\n" , node)#
-
-class indent(piece):
-	def render(self, node, _=None):
-		self.doc.indent()
-
-class dedent(piece):
-	def render(self, node, _=None):
-		self.doc.dedent()
-
 class child(piece):
 	def __init__(self, name):
 		self.name = name
-	def render(self, node, _=None):
-		node.children[self.name].render()
-	
-
-
-
 
 
 
@@ -53,7 +36,19 @@ class template(object):
 		lastitem = None #im going to hell for this lastitem thing
 		for item in self.items:
 			assert(isinstance(item, piece))
-			item.render(node, lastitem)
+			if isinstance(item, indent):
+				node.doc.indent()
+			if isinstance(item, dedent):
+				node.doc.dedent()
+			if isinstance(item, s):
+				node.doc.append(" ", lastitem)
+			if isinstance(item, child):
+				node.children[item.name].render()
+			if isinstance(item, newline):
+				node.doc.newline(item)
+			if isinstance(item, t):
+				node.doc.append(item.text, item)
+
 			lastitem = item
 
 
@@ -225,7 +220,7 @@ class Placeholder(Node):
 	def on_widget_edit(self, widget):
 		if widget == self.textbox:
 			text = self.textbox.text
-			self.menu.items = self.doc.language.functions(self)
+			self.menu.items = self.doc.language.menu(self)
 	
 	def render(self):
 		d = (" (default:"+self.default+")") if self.default else ""

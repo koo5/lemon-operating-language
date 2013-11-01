@@ -9,10 +9,10 @@ class Setting(Templated):
 		self.oneliner = True
 
 class FontSize(Setting):
-	def __init__(self):
+	def __init__(self, value):
 		super(FontSize, self).__init__()
 		self.templates = [template([child("widget")])]
-		self.set('widget', widgets.Number(12))
+		self.set('widget', widgets.Number(value))
 
 	@property
 	def value(self):

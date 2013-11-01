@@ -100,4 +100,21 @@ if module == builtin:
 """
 
 
-syntax = {'statements': [If, 
+syntax = {
+	'statements': [If, While, Asignment],
+	'expressions': [IsLessThan, VariableRead]
+}
+
+
+def add(name, array):
+	ret = []
+	for node in array:
+		for template in node.templates:
+			ret += name + ": " + node.__name__ + ": " + [
+
+def menu(name):
+	ret = add(name, syntax[name])
+	for k,i in syntax.iteritems():
+		if k != name:
+			ret = ret + add(k, i)
+

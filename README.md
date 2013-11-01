@@ -86,11 +86,11 @@ free for:
 if youre not sure/feel like it should be free for you, you can use it for free until i spot you
 others: $5/user/year
 
-contributor agreement
-===
+contributor agreement:
 you give me the right to charge for use (/exercise of other rights?) of your contribution
 you can ask for your fair share:)
 
+http://tarantsov.com/blog/2012/02/the-third-definition-of-open/
 
 
 
@@ -101,3 +101,9 @@ document emits post_render
 not wise to move the caret in the middle of or before rerendering
 document.push_handlers(post_render = self.post_render_move_caret)
 
+
+
+
+===
+
+If you can't sit by a cozy fire with your code in hand enjoying its simplicity and clarity, it needs more work. --Carlos Torres

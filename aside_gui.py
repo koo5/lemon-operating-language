@@ -33,36 +33,12 @@ import language
 def test_stuff():
 	return Dict((
 			"settings", Dict(
-				("font_size", settings.FontSize()),
+				("font_size", settings.FontSize(18)),
 				("fullscreen", settings.Fullscreen())
 				)
 			),(
-			"libraries", Dict(
-				("builtin", Program(Statements([
-					Print(Text("loading builtin(the library)")),
-					Defun(
-						templates = 
-						[
-							[t("print "), child("value")]
-						]
-						#fuck it?
-					),
-					Defun(templates=[[child("x"), t(" is a kind of "), child("y")]]
-					Defun(templates=[[t(" get the type of "), child("y")]]
-				
-				
-					NodeDefinition(
-						signatures = [
-							[t("define node with templates "),
-							 child("templates")
-							
-					
-					
-			),(
 			"programs", List([
 				Program(Statements([
-					FunctionDefinition(
-						FunctionSignature([FunctionArgument
 					Placeholder(), 
 					Asignment(Text("a"), Number(1)),
 					Asignment(Text("b"), Number(5)), 
@@ -284,3 +260,31 @@ if __name__ == "__main__":
 	pyglet.app.run()
 
 
+
+
+
+"""
+,(
+			"libraries", Dict(
+				("builtin", Program(Statements([
+					Print(Text("loading builtin(the library)")),
+					Defun(
+						templates = 
+						[
+							[t("print "), child("value")]
+						]
+						#fuck it?
+					),
+					Defun(templates=[[child("x"), t(" is a kind of "), child("y")]]
+					Defun(templates=[[t(" get the type of "), child("y")]]
+				
+				
+					NodeDefinition(
+						signatures = [
+							[t("define node with templates "),
+							 child("templates")
+							
+					
+					
+			),
+"""
