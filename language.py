@@ -110,7 +110,7 @@ def add(name, array):
 	ret = []
 	for node in array:
 		for template in node.templates:
-			ret += name + ": " + node.__name__ + ": " + [
+			ret += name + ": " + node.__name__ + ": "
 
 def menu(name):
 	ret = add(name, syntax[name])
