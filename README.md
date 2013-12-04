@@ -86,3 +86,8 @@ document emits post_render
 not wise to move the caret in the middle of or before rerendering
 document.push_handlers(post_render = self.post_render_move_caret)
 
+
+---
+===
+maybe leaving out a concrete language would help now?
+try an images approach instead?
