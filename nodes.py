@@ -179,7 +179,7 @@ class List(Collapsible):
 		if len(self.items) > i:
 			return self.items[i]
 		else:
-			return super(Dict, self).__getitem__(i)
+			return super(List, self).__getitem__(i) #?
 
 
 class CollapsibleText(Collapsible):

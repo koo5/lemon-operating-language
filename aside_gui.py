@@ -40,6 +40,7 @@ def test_stuff():
 			"programs", List([
 				Program(Statements([
 					Placeholder(), 
+					FunctionDefinition(Text("substring"))
 					Asignment(Text("a"), Number(1)),
 					Asignment(Text("b"), Number(5)), 
 					While(IsLessThan(VariableRead("a"), VariableRead("b")),	Statements([

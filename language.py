@@ -100,20 +100,42 @@ if module == builtin:
 """
 
 
-syntax = {
-	'statements': [If, While, Asignment],
-	'expressions': [IsLessThan, VariableRead]
-}
+class node(object):
+	members = []
+
+class expression(node):
+	pass
+node.members += expression
+
+class if(expression):
+	pass
+expression.members += if
+
+class MenuItem(object):
+	def __init__(text, subs):
+		
+
+menu=MenuItem(type.__classname__, 
 
 
-def add(name, array):
+class Menu(object):
+	def __init__(subs):
+		self.subs = subs
+	
+	def render():
+		#menu renders in its own layer
+		
+
+def all_nodes(type)
 	ret = []
 	for node in array:
 		for template in node.templates:
 			ret += name + ": " + node.__name__ + ": "
 
-def menu(name):
-	ret = add(name, syntax[name])
+#a simplistic first try
+#menu(node type) = nodes of the type first + all other types next
+def menu(type):
+	ret = all_nodes(type)
 	for k,i in syntax.iteritems():
 		if k != name:
 			ret = ret + add(k, i)

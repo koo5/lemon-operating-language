@@ -79,16 +79,18 @@ license
 (first sketch:)
 
 share alike,
-free for:
-	noncommercial use,
-	companies under 8 users,
-	occasional use
-if youre not sure/feel like it should be free for you, you can use it for free until i spot you
-others: $5/user/year
+free for everyone except corporations:
+	free for noncommercial use,
+	free for companies with under 8 users,
+	free for occasional use
+	free in grey areas
+others: $5/user/year? $1?
 
 contributor agreement:
-you give me the right to charge for use (/exercise of other rights?) of your contribution
-you can ask for your fair share:)
+with your first commit, by writing your name here:
+you give me the rights that are necessary for making money on this
+
+you can ask for your fair share.
 
 http://tarantsov.com/blog/2012/02/the-third-definition-of-open/
 
