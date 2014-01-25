@@ -1,16 +1,15 @@
+
 intro
 ===
+background: https://docs.google.com/document/d/1NQCoEghY5rGyEx9tRulQlPz8Do1JPA8O-uoLq3tpTJk/edit
+
 requires fresh pyglet from the repo:
 hg clone https://code.google.com/p/pyglet/
-
 and a good deal of imagination at the moment
 
 talk to me in #lemonparty on freenode
 
 mockup1: https://github.com/koo5/lemon-operating-language/blob/refugee_branch/mockup1.odt?raw=true
-
-stuff: https://docs.google.com/document/d/1NQCoEghY5rGyEx9tRulQlPz8Do1JPA8O-uoLq3tpTJk/edit
-
 
 
 
@@ -104,8 +103,3 @@ not wise to move the caret in the middle of or before rerendering
 document.push_handlers(post_render = self.post_render_move_caret)
 
 
-
-
-===
-
-If you can't sit by a cozy fire with your code in hand enjoying its simplicity and clarity, it needs more work. --Carlos Torres
