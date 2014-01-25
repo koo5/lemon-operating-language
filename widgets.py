@@ -108,7 +108,7 @@ class Menu(Widget):
 class Button(Widget):
 	def __init__(self, text="[🔳]"):
 		super(Button, self).__init__()
-		self.register_event_types('on_click')
+		self.register_event_types('on_click, on_text')
 		self.color = (255,150,150,255)
 		self.text = text
 	def on_mouse_press(self, x, y, button, modifiers):
@@ -118,6 +118,9 @@ class Button(Widget):
 		print "button pressed",text,"..."
 		if text == "\r":
 			self.dispatch_event('on_click', self)
+		else:
+			self.dispatch_event('on_text',  text)
+		
 	def render(self):
 		self.doc.append(self.text, self)
 	
@@ -127,8 +130,8 @@ class Number(Text):
 		self.text = str(text)
 		self.set('minus_button', Button("-"))
 		self.set('plus_button', Button("+"))
-		self.minus_button.push_handlers(on_click=self.on_widget_click)
-		self.plus_button.push_handlers(on_click=self.on_widget_click)
+		self.minus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
+		self.plus_button.push_handlers(on_click=self.on_widget_click, on_text=self.on_widget_text)
 	def render(self):
 		self.minus_button.render()
 		self.doc.append(self.text, self)
@@ -136,12 +139,22 @@ class Number(Text):
 	@property
 	def value(self):
 		return int(self.text)
+	def inc(self):
+		self.text = str(int(self.text)+1)
+	def dec(self):
+		self.text = str(int(self.text)-1)
+
 	def on_widget_click(self,widget):
 		if widget == self.minus_button:
-			self.text = str(int(self.text)-1)
+			self.dec()
 		if widget == self.plus_button:
-			self.text = str(int(self.text)+1)
-			
+			self.inc()
+	def on_widget_text(self,text):
+		if text == "+":
+			self.inc()
+		if text == "-":
+			self.dec()
+				
 class Toggle(Widget):
 	def __init__(self, value):
 		super(Toggle, self).__init__()
