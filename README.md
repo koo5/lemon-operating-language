@@ -3,9 +3,8 @@ intro
 ===
 background: https://docs.google.com/document/d/1NQCoEghY5rGyEx9tRulQlPz8Do1JPA8O-uoLq3tpTJk/edit
 
-requires fresh pyglet from the repo:
+requires fresh pyglet from the repo: (should make a workaround: http://code.google.com/p/pyglet/issues/detail?id=665)
 hg clone https://code.google.com/p/pyglet/
-and a good deal of imagination at the moment
 
 talk to me in #lemonparty on freenode
 
@@ -13,93 +12,16 @@ mockup1: https://github.com/koo5/lemon-operating-language/blob/refugee_branch/mo
 
 
 
-overall
-===
-using pyglets text features. might outphase it or start hacking on it.
-heading are nice, but do we need varying fonts over one line?
-
-
-
-templates
-===
-
-we can use decode_attributed like decode_attributed('{element xxx}abc'),
-instead of the current way of chopping the template into pieces..
-closing elements would be nice
-
-output has to be run thru a templating engine that replaces {%element%}
-with current element 
-
-get back to the templating branch but use a proper engine
-
-function declarations and calls are missing.   it should allow
-parameters inside the function signature like this: To decide what
-number is the larger of (N - number) and (M - number):
-
-https://wiki.python.org/moin/Templating
-
-
-
-
-
-
-language
-===
-inspiration:
-
-binops: find the best nodes to ops ratio for our purposes, implement them all
-
-functions: depend on templates?
-how many other features can be handled by function calls?
-
-variables : 
-theres some figuring out of static vs dynamic scope: http://en.wikipedia.org/wiki/Scope_(computer_science)
-nodes that reference variables should probably use both names and object references to the declaring nodes
-upon loading or entering, can optionally use reference by name, when refactoring, use object reference....
-
-foreach loop
-
-object types - shrug, just throw them there for now, dont think about a type system, they are crucial for:
-
-boolean adjectives: http://www.ifwiki.org/index.php/Inform_7_for_Programmers/Part_1#Boolean_Adjectives
-
-tables - alternative ast presentation fun starts here!
-
-rules - or here..
-
-or anywhere..
-
-
-
-
 
 license
 ===
-(first sketch:)
+see LICENSE.md
 
-share alike,
-free for everyone except corporations:
-	free for noncommercial use,
-	free for companies with under 8 users,
-	free for occasional use
-	free in grey areas
-others: $5/user/year? $1?
-
-contributor agreement:
-with your first commit, by writing your name here:
-you give me the rights that are necessary for making money on this
-
-you can ask for your fair share.
-
+see also: 
 http://tarantsov.com/blog/2012/02/the-third-definition-of-open/
+http://wonko.com/post/jsmin-isnt-welcome-on-google-code
 
 
 
-
-events
-===
-document emits post_render
-not wise to move the caret in the middle of or before rerendering
-document.push_handlers(post_render = self.post_render_move_caret)
 
 
