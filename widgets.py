@@ -25,9 +25,9 @@ class Text(Widget):
 		print "AA", document.caret.get_style("position")
 		return document.caret.get_style("position")
 		"""
-		print document.positions
+		print(document.positions)
 		
-		print self, document.caret_position, "-", document.positions[self]
+		print(self, document.caret_position, "-", document.positions[self])
 		return document.caret_position - document.positions[self]
 
 	def post_render_move_caret(self):
@@ -46,7 +46,7 @@ class Text(Widget):
 	
 	def on_text(self, text):
 		pos = self.get_caret_position()
-		print "on_text, pos: ", pos
+		print("on_text, pos: ", pos)
 
 		#print self.text[:pos], text, self.text[pos:]
 		self.text = self.text[:pos] + text + self.text[pos:]
@@ -121,7 +121,7 @@ class Button(Widget):
 		#print "button clicked"
 		self.dispatch_event('on_click', self)
 	def on_text(self, text):
-		print "button pressed",text,"..."
+		print("button pressed",text,"...")
 		if text == "\r":
 			self.dispatch_event('on_click', self)
 	def render(self):

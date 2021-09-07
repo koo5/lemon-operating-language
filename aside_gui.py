@@ -108,7 +108,7 @@ class Window(pyglet.window.Window):
 		self.indentation -= 1
 			
 	def append(self, text, element, attributes={}):
-		if not self.positions.has_key(element):
+		if element not in self.positions:
 			self.positions[element] = len(self.document.text)
 		a = {'element':element, 'color':element.color}
 		#update merges attributes into a
@@ -127,7 +127,7 @@ class Window(pyglet.window.Window):
 		self.append("\n", element)
 
 	def on_settings_change(self, setting):
-		print setting
+		print(setting)
 		if setting == self.root.settings.fullscreen:
 			window.toggle_fullscreen()
 
@@ -136,7 +136,7 @@ class Window(pyglet.window.Window):
 		self.positions = {}
 		self.active = self.on()
 		self.caret_position = self.caret.position
-		print self.caret.position
+		print(self.caret.position)
 		#we're gonna need it while rendering, and we're not gonna have it, 
 		#because document.text is set to "" at the beginning
 	
@@ -180,7 +180,7 @@ class Window(pyglet.window.Window):
 				for i in range(0,10):
 					self.caret.on_text_motion(pyglet.window.key.MOTION_DOWN)
 			else:
-				print "passing to caret"
+				print("passing to caret")
 				self.caret.on_text_motion(motion)
 		self.rerender()
 
@@ -201,7 +201,7 @@ class Window(pyglet.window.Window):
 	
 
 	def toggle_fullscreen(self):
-		print "!fullscreen"
+		print("!fullscreen")
 		self.set_fullscreen(not self.fullscreen)
 
 	def on_draw(self):

@@ -11,7 +11,7 @@ class Element(pyglet.event.EventDispatcher):
 	
 	def __getattr__(self, name):
 
-		if self.children.has_key(name):
+		if name in self.children:
 			return self.children[name]
 		else:
 			raise AttributeError(name, self)
@@ -27,33 +27,33 @@ class Element(pyglet.event.EventDispatcher):
 
 	def dump(self):
 		document.append(self.__repr__(), self)
-		for item in self.children.itervalues():
+		for item in self.children.values():
 			document.indent()
 			if isinstance(item, Element):
 				item.dump()
 			else:
-				print item.__repr__()
+				print(item.__repr__())
 			document.dedent()
 
 	def on_text(self, text):
-		print "on_text default:", self, text
+		print("on_text default:", self, text)
 		return False
 	
 	def on_text_motion(self, motion, select=False):
-		print "on_text_motion default:", self, (
+		print("on_text_motion default:", self, (
 			pyglet.window.key.motion_string(motion),
-			select)
+			select))
 		return False
 
 	def on_key_press(self, symbol, modifiers):
-		print "on_key_press default:", self,(
+		print("on_key_press default:", self,(
 			pyglet.window.key.modifiers_string(modifiers),
-			pyglet.window.key.symbol_string(symbol))
+			pyglet.window.key.symbol_string(symbol)))
 		return False
 		
 	def on_mouse_press(self, x, y, button, modifiers):
-		print "on_mouse_press default:", self, (
-			x,y,button,modifiers)
+		print("on_mouse_press default:", self, (
+			x,y,button,modifiers))
 		return False
 
 	def is_caret_on_me(self):

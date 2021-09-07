@@ -42,7 +42,7 @@ class Templated(nodes.Node):
 	def on_key_press(self, key, modifiers):
 		if (pyglet.window.key.MOD_CTRL & modifiers) and (key == pyglet.window.key.UP):
 			self.prev_template()
-			print "prev"
+			print("prev")
 		if (pyglet.window.key.MOD_CTRL & modifiers) and (key == pyglet.window.key.DOWN):
 			self.next_template()
-			print "next"
+			print("next")

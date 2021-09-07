@@ -54,7 +54,7 @@ class Dict(Collapsible):
 	def __init__(self, *tuples):
 		super(Dict, self).__init__(OrderedDict(tuples))
 	def render_items(self):
-			for key, item in self.items.iteritems():
+			for key, item in self.items.items():
 				document.append(key+":", self)
 				if hasattr(item, "oneliner"):
 					document.append(" ", self)
@@ -63,7 +63,7 @@ class Dict(Collapsible):
 				item.render()
 				document.newline(item)
 	def __getattr__(self, name):
-		if self.items.has_key(name):
+		if name in self.items:
 			return self.items[name]
 		else:
 			return super(Dict, self).__getattr__(name)

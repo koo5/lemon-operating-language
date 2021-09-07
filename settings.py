@@ -26,7 +26,7 @@ class Fullscreen(Setting):
 		self.set('widget', widgets.Toggle(False))
 		self.widget.push_handlers(on_edit = self.on_widget_edit)
 	def on_widget_edit(self, widget):
-		print "aaa"
+		print("aaa")
 		self.dispatch_event('on_change', self)
 
 	@property
